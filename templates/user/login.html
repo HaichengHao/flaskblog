@@ -233,6 +233,9 @@
         document.getElementById("sendVcodeBtn").addEventListener("click", function () {
             const phoneInput = document.getElementById("vcphone");
             const phone = phoneInput.value.trim();
+            /*获取输入的验证码*/
+            const vcode = document.getElementById("vcode");
+
 
             if (!phone) {
                 alert("请输入手机号");
@@ -246,6 +249,11 @@
                 return;
             }
 
+
+            /*如果各个验证都没有问题那就进行验证码的验证操作*/
+            $.get('{{ url_for('user.sendmsg') }}',{phone:phone},function (data){
+
+            })
             alert("验证码已发送（模拟）");
             // 实际项目中调用 API
             // fetch('/api/send_vcode', { method: 'POST', body: JSON.stringify({ phone }) })

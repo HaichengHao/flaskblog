@@ -24,13 +24,16 @@ import hashlib
 @user_bps.route('/')
 def index():
     username = session.get('uname')
-    print('当前用户名:'+username)
+    # print('当前用户名:'+username)
     if username:
         return render_template('user/index.html', username=username)
     else:
         return redirect('/login')
 
-
+@user_bps.route('/usercenter',endpoint='usercenter')
+def usercenter():
+    username = session.get('uname')
+    return render_template('user/center.html', username=username)
 # 删除数据
 @user_bps.route('/deldata')
 def del_data():
@@ -213,14 +216,19 @@ def login():
     return render_template('user/login.html', errorinfo='请输入完整信息')
 
 
+#短信息发送部分,实现验证码登录
+@user_bps.route('/sendMSG',endpoint='sendmsg')
+def sendmsg_route():
+    pass
+
 @user_bps.route('/logout', endpoint='logout')
 def logout_route():
     session.clear()
-    # resp = make_response(redirect('/login'))
+    resp = make_response(redirect('/login'))
     # important:新增之退出后删除cookie
-    # resp.delete_cookie('remember_username')
-    # return resp
-    return redirect('/login')
+    resp.delete_cookie('remember_username')
+    return resp
+    # return redirect('/login')
 
 
 # 手机号码验证

@@ -13,13 +13,15 @@ from apps.user.models import User
 from apps.article.models import Article
 from apps.goods.view import goods_bp
 from apps.goods.models import *
+
+
 def create_app(configname='default'):
     # app = Flask(__name__, template_folder='templates')
     basedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     template_dir = os.path.join(basedir, 'templates')
-    static_dir = os.path.join(basedir,'static')
+    static_dir = os.path.join(basedir, 'static')
 
-    app = Flask(__name__, template_folder=template_dir,static_folder=static_dir)
+    app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
     # app.secret_key = ';ouahsef;euahiuhiluh'
     configname = configname or os.getenv('FLASK_ENV' or 'default')
     app.config.from_object(configdict[configname])
@@ -35,7 +37,7 @@ def create_app(configname='default'):
         if request.path.startswith('/static/') or request.path == '/favicon.ico':
             return
         # important:设置白名单,不然用户会卡循环登录最后报错,白名单里放的是无需登录就能访问的页面
-        if request.path in ["/login",'/login_verifycode', '/register','/checkphone']:
+        if request.path in ["/login", '/login_verifycode', '/register', '/checkphone']:
             return
 
         print('请求前操作')
@@ -49,5 +51,12 @@ def create_app(configname='default'):
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify(code=401, msg='未登录'), 401
             return redirect('/login')
+
+    @app.template_global()
+    def current_user():
+        username = session.get('uname')
+        print('当前全局用户' + username)
+        return username
+
     migrate.init_app(app, db)
     return app
