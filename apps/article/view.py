@@ -2,7 +2,9 @@
 # @FileName  :view.py
 # @DateTime  :2025/8/27 16:50
 
-from flask import Blueprint, request, render_template
+from flask import Blueprint, request, render_template, session
+from sqlalchemy import and_
+
 from apps.user.models import User
 from apps.article.models import Article
 from exts.extensions import db
@@ -23,21 +25,25 @@ def article_publish():
         db.session.add(article)
         db.session.commit()
         return '添加成功'
+    uname = session.get('uname')
+    print('要发布文章的用户是'+uname)
+    user = User.query.filter(and_(User.isdelete == False, User.username == uname)).first()
+    print(user)
+    print(user.id,user.username)
+    return render_template('article/add_article.html', username=uname,user=user)
 
-    users = User.query.filter(User.isdelete == False).all()
-    return render_template('article/add_article.html',users=users)
 
-@article_bp.route('/all_article',methods=['POST','GET'],endpoint='all_article')
+@article_bp.route('/all_article', methods=['POST', 'GET'], endpoint='all_article')
 def article_all():
     if request.method == 'POST':
         pass
 
     all_article = Article.query.all()
-    return render_template('article/all.html',all_article=all_article)
+    return render_template('article/all.html', all_article=all_article)
 
 
-@article_bp.route('/all1',endpoint='all1')
+@article_bp.route('/all1', endpoint='all1')
 def all_article():
     id = request.args.get('id')
     user = User.query.get(id)
-    return render_template('article/all1.html',user=user)
+    return render_template('article/all1.html', user=user)

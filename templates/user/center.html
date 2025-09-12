@@ -3,5 +3,18 @@
     用户中心
 {% endblock %}
 {% block page_content %}
-    <div>当前用户{{ current_user() }}</div>
+    <div class="container" style="padding: 30px">
+        <div>用户名{{ current_user() }}</div>
+        <form action="{{ url_for('user.usercenter') }}" method="post">
+            <p><input type="text" name="userme" value="{{ current_user() }}" contenteditable="false"
+                      hidden="hidden"></p>
+            <p><input type="text" name="newusername" placeholder="输入新的用户名"></p>
+            <p><input type="text" id='000' name="password" placeholder="新密码"></p>
+            <p><input type="text" id='001' name="repassword" placeholder="再次输入新密码"></p>
+            <p><input type="text" name="phone" placeholder={{ userme.phone }}></p>
+            <p><input type="submit"></p>
+        </form>
+    </div>
+    <p>{{ errorinfo }}</p>
+
 {% endblock %}

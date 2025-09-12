@@ -8,7 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from .models import User
 from exts.extensions import db
-from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, make_response
+from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, make_response, g
 from .models import User
 
 user_bps = Blueprint(name='user', import_name=__name__)
@@ -25,15 +25,51 @@ import hashlib
 def index():
     username = session.get('uname')
     # print('当前用户名:'+username)
+    # username = session.get('uname')
     if username:
         return render_template('user/index.html', username=username)
     else:
         return redirect('/login')
 
-@user_bps.route('/usercenter',endpoint='usercenter')
+
+@user_bps.route('/usercenter', endpoint='usercenter', methods=['GET', 'POST'])
 def usercenter():
     username = session.get('uname')
-    return render_template('user/center.html', username=username)
+    userme = User.query.filter_by(username=username).first()
+    if request.method == 'GET':
+        return render_template('user/center.html', username=username, userme=userme)
+    else:
+        # POST 处理
+        username = request.form.get('userme')
+        newusername = request.form.get('newusername')
+        password = request.form.get('password')
+        repassword = request.form.get('repassword')
+        phone = request.form.get('phone')
+
+        if password != repassword:
+            return render_template('user/center.html', errorinfo='两次输入的密码不一致，请重新输入')
+
+        user = User.query.filter_by(username=username).first()
+        # if not user:
+        #     return render_template('user/center.html', errorinfo="用户不存在，无法修改")
+
+        # 更新用户名（如果提供了新用户名）
+        if newusername:
+            user.username = newusername
+
+        # 更新密码（已加密）
+        user.password = hashlib.sha256(password.encode('utf-8')).hexdigest()
+
+        # 更新手机号
+        if phone:
+            user.phone = phone
+
+        db.session.commit()
+        # 修改之后应该直接退出重新登陆
+        session.clear()
+        return redirect('/')
+
+
 # 删除数据
 @user_bps.route('/deldata')
 def del_data():
@@ -62,7 +98,7 @@ def del_data():
 @user_bps.route('/modifydata', methods=['POST', 'GET'], endpoint='modifydata')
 def modidata():
     if request.method == 'GET':
-        username = request.args.get('username')
+        username = session.get('uname')
         user = User.query.filter_by(username=username).first()
         if not user:
             return "用户不存在", 404
@@ -87,14 +123,14 @@ def modidata():
         user.username = newusername
 
     # 更新密码（已加密）
-    user.password = hashlib.sha256(password.encode('utf-8')).hexdigest()
+    user.password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
 
     # 更新手机号
     if phone:
         user.phone = phone
 
     db.session.commit()
-    return redirect(url_for('user.user_center'))
+    return redirect(url_for('user.index'))
 
 
 # 用户注册
@@ -125,6 +161,7 @@ def register():
         else:
             return render_template('user/register.html', errorinfo='两次输入的密码不一致请重新输入')
     return render_template('user/register.html')
+
 
 #
 # # 用户登入
@@ -177,14 +214,20 @@ def register():
 @user_bps.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
-        # 从 cookie 获取记住的用户名
-        username = request.cookies.get('remember_username', '')
-        return render_template('user/login.html', username=username)
+        # # 从 cookie 获取记住的用户名
+        # username = request.cookies.get('remember_username')
+        # print('拿到的cookie'+username)
+        # if username==None:
+        #     return render_template('user/login.html',username=username)
+        # else:
+        #     return render_template('user/login.html')
+        return render_template('user/login.html')
 
     # POST 请求：判断是哪种登录方式
     username = request.form.get('username')
     password = request.form.get('password')
-    print(username,password)
+    # crypto_pwd = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
+    print(username, password)
     phone = request.form.get('phone')
     vcode = request.form.get('vcode')  # 验证码登录用
 
@@ -216,10 +259,11 @@ def login():
     return render_template('user/login.html', errorinfo='请输入完整信息')
 
 
-#短信息发送部分,实现验证码登录
-@user_bps.route('/sendMSG',endpoint='sendmsg')
+# 短信息发送部分,实现验证码登录
+@user_bps.route('/sendMSG', endpoint='sendmsg')
 def sendmsg_route():
     pass
+
 
 @user_bps.route('/logout', endpoint='logout')
 def logout_route():
