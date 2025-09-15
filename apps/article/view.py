@@ -37,9 +37,9 @@ def article_publish():
 def article_all():
     if request.method == 'POST':
         pass
-
+    username = session.get('uname')
     all_article = Article.query.all()
-    return render_template('article/all.html', all_article=all_article)
+    return render_template('article/all.html', all_article=all_article,username=username)
 
 
 @article_bp.route('/all1', endpoint='all1')

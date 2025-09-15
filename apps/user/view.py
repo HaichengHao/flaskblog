@@ -26,6 +26,7 @@ def index():
         return redirect('/login')
 
 
+# 用户中心
 @user_bps.route('/usercenter', endpoint='usercenter', methods=['GET', 'POST'])
 def usercenter():
     username = session.get('uname')
@@ -59,6 +60,43 @@ def usercenter():
         session.clear()
         return redirect('/')
 
+
+# 用户数据更新
+@user_bps.route('/upgrade_user_info', endpoint='ugui')
+def upgrade_user_info_route():
+    username = session.get('uname')
+    if request.method == 'POST':
+        # userme = User.query.filter_by(username=username).first()
+        # POST 处理
+        username = request.form.get('userme')
+        newusername = request.form.get('newusername')
+        password = request.form.get('password')
+        repassword = request.form.get('repassword')
+        phone = request.form.get('phone')
+        icon = request.files.get('icon')
+
+        if password != repassword:
+            return render_template('user/center.html', errorinfo='两次输入的密码不一致，请重新输入')
+
+        user = User.query.filter_by(username=username).first()
+        # 更新用户名（如果提供了新用户名）
+        if newusername:
+            user.username = newusername
+        # 更新密码（已加密）
+        user.password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
+
+        # 更新手机号
+        if phone:
+            user.phone = phone
+
+        #更新头像
+        if icon is not None:
+            user.icon = icon
+
+        db.session.commit()
+        # 修改之后应该直接退出重新登陆
+        session.clear()
+        return redirect('/')
 
 # 删除数据
 @user_bps.route('/deldata')

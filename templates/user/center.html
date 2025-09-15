@@ -5,7 +5,10 @@
 {% block page_content %}
     <div class="container" style="padding: 30px">
         <div>用户名{{ current_user() }}</div>
-        <form action="{{ url_for('user.usercenter') }}" method="post">
+        <p><img src="{{ url_for('static',filename='imgs/touxiang.png') }}" alt="头像"
+                style="width: 70px;height: 70px ;margin-bottom: 4px"><br>
+            <input type="file" id="upyourtouxiang" name="icon" placeholder="选择头像"></p>
+        <form action="{{ url_for('user.usercenter') }}" method="post" enctype="multipart/form-data">
             <p><input type="text" name="userme" value="{{ current_user() }}" contenteditable="false"
                       hidden="hidden"></p>
             <p><input type="text" name="newusername" placeholder="输入新的用户名"></p>
@@ -16,5 +19,9 @@
         </form>
     </div>
     <p>{{ errorinfo }}</p>
+
+{% endblock %}
+
+{% block myjs %}
 
 {% endblock %}

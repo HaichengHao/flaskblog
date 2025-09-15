@@ -35,14 +35,19 @@
 {% block page_content %}
 
     <body>
-    {% for article in all_article %}
-        <div class="art">
-            <h3>{{ article.title }}</h3>
-            <p>{{ article.user.username }}&nbsp;&nbsp;{{ article.pdatetime }}</p>
-            <div>
-                {{ article.content }}
+    <div class="container" style="padding: 20px">
+
+        {% for article in all_article %}
+            <div class="card w-75 mb-3" style="padding: 7px;margin-top: 15px;overflow: hidden">
+                <h3>{{ article.title }}</h3>
+                <p>用户名:{{ article.user.username }}&nbsp;&nbsp</p>
+                <p>发布时间:{{ article.pdatetime }}</p>
+                <div>
+                    {{ article.content }}
+                </div>
             </div>
-        </div>
-    {% endfor %}
+        {% endfor %}
+    </div>
+
     </body>
 {% endblock %}
