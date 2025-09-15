@@ -15,7 +15,7 @@ class Config:
     # 3. 是否打印 SQL 语句（开发时有用）
     SQLALCHEMY_ECHO = True  # 开发时打开，生产关闭
 
-    # 4. 连接池大小（默认 5）
+    # 4. 连接池大小（默认 10）
     SQLALCHEMY_POOL_SIZE = 10
 
     # 5. 连接池超时时间（秒）

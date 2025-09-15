@@ -15,12 +15,6 @@ user_bps = Blueprint(name='user', import_name=__name__)
 import hashlib
 
 
-# # 用户中心
-# @user_bps.route('/')
-# def user_center():
-#     users = User.query.filter_by(isdelete=0).all()
-#     print(users)
-#     return render_template('user/usercenter.html', users=users)
 @user_bps.route('/')
 def index():
     username = session.get('uname')
@@ -50,15 +44,11 @@ def usercenter():
             return render_template('user/center.html', errorinfo='两次输入的密码不一致，请重新输入')
 
         user = User.query.filter_by(username=username).first()
-        # if not user:
-        #     return render_template('user/center.html', errorinfo="用户不存在，无法修改")
-
         # 更新用户名（如果提供了新用户名）
         if newusername:
             user.username = newusername
-
         # 更新密码（已加密）
-        user.password = hashlib.sha256(password.encode('utf-8')).hexdigest()
+        user.password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
 
         # 更新手机号
         if phone:
@@ -215,13 +205,13 @@ def register():
 def login():
     if request.method == 'GET':
         # # 从 cookie 获取记住的用户名
-        # username = request.cookies.get('remember_username')
+        username = request.cookies.get('remember_username')
         # print('拿到的cookie'+username)
-        # if username==None:
-        #     return render_template('user/login.html',username=username)
-        # else:
-        #     return render_template('user/login.html')
-        return render_template('user/login.html')
+        if username == None:
+            return render_template('user/login.html', username=username)
+        else:
+            return render_template('user/login.html')
+        # return render_template('user/login.html')
 
     # POST 请求：判断是哪种登录方式
     username = request.form.get('username')
@@ -230,10 +220,21 @@ def login():
     print(username, password)
     phone = request.form.get('phone')
     vcode = request.form.get('vcode')  # 验证码登录用
-
+    # 👇 加在这里！
+    print("👉 Form 数据:", request.form.to_dict())
+    print("👉 username:", repr(username))
+    print("👉 password:", repr(password))
+    print("👉 phone:", repr(phone))
+    print("👉 vcode:", repr(vcode))
     # 场景1：用户名密码登录
     if username and password:
         user = User.query.filter_by(username=username, isdelete=0).first()
+        if user:
+            print("✅ 找到用户:", user.username)
+            print("✅ 数据库存储的密码哈希:", user.password)
+            print("✅ check_password_hash 结果:", check_password_hash(user.password, password))
+        else:
+            print("❌ 未找到用户或已删除")
         if user and check_password_hash(user.password, password):
             session['uname'] = username
             resp = make_response(redirect('/'))
