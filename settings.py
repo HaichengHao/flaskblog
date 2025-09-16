@@ -1,13 +1,15 @@
 """
 @File    :congig.py
 @Editor  : 百年
-@Date    :2025/8/10 8:45 
+@Date    :2025/8/10 8:45
 """
 import os
-#读取env中的配置项
+
+
+# 读取env中的配置项
 
 class Config:
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL') #读取.env文件中的配置
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')  # 读取.env文件中的配置
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # 2. 禁用追踪修改（强烈建议关闭，节省性能）
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -31,32 +33,34 @@ class Config:
     # SQLALCHEMY_COMMIT_ON_TEARDOWN = False  # 已废弃，不推荐使用
     SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:HHCzio20@127.0.0.1:3306/flaskblog'
 
-    #9.设置session需要的SECRET_KEY
+    # 9.设置session需要的SECRET_KEY
     SECRET_KEY = ';ouahsef;euahiuhiluh'
 
-
-    #10.配置项目路径
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__)) #important:得到当前文件的文件夹
+    # 10.配置项目路径
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # important:得到当前文件的文件夹
     STATIC_DIR = os.path.join(BASE_DIR, 'static')
     TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
-    #头像上传目录
-    UPLOAD_ICON_FOLDER = os.path.join(STATIC_DIR, 'upload\icon')
-    #相册上传目录
+    # 头像上传目录
+    UPLOAD_ICON_FOLDER = os.path.join(STATIC_DIR, 'upload/icon')
+    # 相册上传目录
     UPLOAD_PHOTO_FOLDER = os.path.join(STATIC_DIR, 'upload/photo')
+
 
 # 配置开发配置
 class devConfig(Config):
     DEBUG = True
     ENV = 'development'
 
+
 # 配置生产配置
 class prodConfig(Config):
     DEBUG = False
     ENV = 'production'
 
-#映射字典
+
+# 映射字典
 configdict = {
-    'development':devConfig,
-    'production':prodConfig,
-    'default':devConfig
+    'development': devConfig,
+    'production': prodConfig,
+    'default': devConfig
 }

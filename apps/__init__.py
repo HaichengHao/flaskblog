@@ -4,9 +4,10 @@
 @Date    :2025/8/10 8:43 
 """
 import os
-from flask import Flask, request, session, redirect, jsonify
+from flask import Flask, request, session, redirect, jsonify, g
 from exts.extensions import db, migrate
-from .config import configdict
+# from .config import configdict
+from settings import configdict
 from .user.view import user_bps
 from .article.view import article_bp
 from apps.user.models import User
@@ -51,6 +52,18 @@ def create_app(configname='default'):
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify(code=401, msg='未登录'), 401
             return redirect('/login')
+
+        #important：下面放置全局g
+        username = session.get('uname')
+        if not username:
+            g.userme = None
+        else:
+            try:
+                user = User.query.filter_by(username=username, isdelete=0).first()
+                g.userme = user
+            except Exception as e:
+                print(f"⚠️ 查询用户失败: {e}")
+                g.userme = None
 
     @app.template_global()
     def current_user():

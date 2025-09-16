@@ -2,7 +2,7 @@
 # @FileName  :view.py
 # @DateTime  :2025/8/27 16:50
 
-from flask import Blueprint, request, render_template, session
+from flask import Blueprint, request, render_template, session,g
 from sqlalchemy import and_
 
 from apps.user.models import User

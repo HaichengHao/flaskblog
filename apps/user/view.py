@@ -3,8 +3,11 @@
 @Editor  : 百年
 @Date    :2025/8/10 10:04 
 """
+import os.path
+from settings import Config
 from sqlalchemy import and_, or_
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 
 from .models import User
 from exts.extensions import db
@@ -14,51 +17,108 @@ from .models import User
 user_bps = Blueprint(name='user', import_name=__name__)
 import hashlib
 
+#important:新增一个蓝图请求前函数
+@user_bps.before_request
+def load_user():
+    """在每个请求前加载当前登录用户"""
+    username = session.get('uname')
+
+    # 未登录
+    if not username:
+        g.userme = None
+        return
+
+    # 已登录，查询有效用户（逻辑删除的不算）
+    try:
+        user = User.query.filter_by(username=username, isdelete=0).first()
+        if user:
+            g.userme = user
+        else:
+            # 用户不存在或已被删除
+            session.clear()
+            g.userme = None
+    except Exception as e:
+        # 数据库异常兜底
+        print(f"⚠️ 加载用户失败: {e}")
+        g.userme = None
 
 @user_bps.route('/')
 def index():
-    username = session.get('uname')
-    # print('当前用户名:'+username)
     # username = session.get('uname')
-    if username:
-        return render_template('user/index.html', username=username)
+    # # print('当前用户名:'+username)
+    # # username = session.get('uname')
+    # userme = User.query.filter_by(username=username).first()
+    if g.userme:
+        return render_template('user/index.html', username=g.userme.username, userme=g.userme)
     else:
         return redirect('/login')
 
 
-# 用户中心
 @user_bps.route('/usercenter', endpoint='usercenter', methods=['GET', 'POST'])
 def usercenter():
-    username = session.get('uname')
-    userme = User.query.filter_by(username=username).first()
+    # username = session.get('uname')
+    # userme = User.query.filter_by(username=username).first()
+
     if request.method == 'GET':
-        return render_template('user/center.html', username=username, userme=userme)
+        return render_template('user/center.html', username=g.userme.username, userme=g.userme)
     else:
-        # POST 处理
-        username = request.form.get('userme')
+        # 获取表单数据
+        username = request.form.get('userme')  # 当前用户名（用于查询）
         newusername = request.form.get('newusername')
         password = request.form.get('password')
         repassword = request.form.get('repassword')
         phone = request.form.get('phone')
-
-        if password != repassword:
-            return render_template('user/center.html', errorinfo='两次输入的密码不一致，请重新输入')
+        icon = request.files.get('icon')
 
         user = User.query.filter_by(username=username).first()
-        # 更新用户名（如果提供了新用户名）
+        if not user:
+            return "用户不存在", 404
+
+        # 1. 更新用户名
         if newusername:
             user.username = newusername
-        # 更新密码（已加密）
-        user.password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
 
-        # 更新手机号
+        # 2. 只有当用户输入了新密码时才更新密码
+        if password:
+            if password != repassword:
+                return render_template('user/center.html', errorinfo='两次输入的密码不一致，请重新输入')
+            user.password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
+
+        # 3. 更新手机号
         if phone:
             user.phone = phone
 
+        # 4. 更新头像
+        if icon:
+            icon_name = icon.filename
+            secure_name = check_img(icon_name)
+            if secure_name:
+                file_path = os.path.join(Config.UPLOAD_ICON_FOLDER, secure_name)
+                icon.save(file_path)
+                user.icon = os.path.join('upload/icon', secure_name).replace('\\', '/')
+            else:
+                return render_template('user/center.html', errorinfo='不支持此格式')
+
         db.session.commit()
-        # 修改之后应该直接退出重新登陆
-        session.clear()
-        return redirect('/')
+
+        # 如果用户名变了，更新 session
+        if newusername:
+            session['uname'] = newusername
+
+        session.clear()  # 强制重新登录
+        return redirect('/login')
+
+
+ALLOWED_EXTENSIONS = ['jpg', 'png', 'svg', 'gif', 'bmp']
+
+
+def check_img(file_name):
+    suffix = file_name.split('.')[-1]
+    if suffix in ALLOWED_EXTENSIONS:
+        icon_name = secure_filename(file_name)
+        return icon_name
+    else:
+        return False
 
 
 # 用户数据更新
@@ -89,7 +149,7 @@ def upgrade_user_info_route():
         if phone:
             user.phone = phone
 
-        #更新头像
+        # 更新头像
         if icon is not None:
             user.icon = icon
 
@@ -97,6 +157,7 @@ def upgrade_user_info_route():
         # 修改之后应该直接退出重新登陆
         session.clear()
         return redirect('/')
+
 
 # 删除数据
 @user_bps.route('/deldata')
@@ -243,13 +304,13 @@ def register():
 def login():
     if request.method == 'GET':
         # # 从 cookie 获取记住的用户名
-        username = request.cookies.get('remember_username')
-        # print('拿到的cookie'+username)
-        if username == None:
-            return render_template('user/login.html', username=username)
-        else:
-            return render_template('user/login.html')
-        # return render_template('user/login.html')
+        # username = request.cookies.get('remember_username')
+        # # print('拿到的cookie'+username)
+        # if username == None:
+        #     return render_template('user/login.html', username=username)
+        # else:
+        #     return render_template('user/login.html')
+        return render_template('user/login.html')
 
     # POST 请求：判断是哪种登录方式
     username = request.form.get('username')
