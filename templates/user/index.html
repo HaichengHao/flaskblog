@@ -1,29 +1,65 @@
 {% extends 'base.html' %}
 {% block title %}
-    博客首页
+    首页
 {% endblock %}
 {% block style %}
     {{ super() }}
+    <style>
+        {#div.myc:hover{#}
+        {#height: 400px !important;#}
+        {#    transition: 0.15s all linear;#}
+        {#    height: 200px;#}
+        {#transform: scale(1.1);#}
+        {#z-index: 1000000;#}
+        {#    overflow: hidden;#}
+        {
+        #}#}
+    </style>
+
+{% endblock %}
+{% block page_content %}
+
+    <body>
+    <div class="container" style="padding: 20px;margin-bottom: 40px">
+
+        {% for article in all_article %}
+            <div class="card myc w-95 mb-3" style="padding: 7px;margin-top: 15px;">
+                <h4 style="color: #30423b;">{{ article.title }}</h4>
+                <p>用户名:{{ article.user.username }}&nbsp;&nbsp</p>
+                <p>发布时间:{{ article.pdatetime }}</p>
+                <p>所属类别:{{ article.article_type.typename }}</p> <!--利用backref来调用article的article_type的typename-->
+                <div class="contentraw" style="
+white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 60%;
+    height: 2em;
+    line-height: 2em;">
+                    {{ article.content }}
+                </div>
+
+            </div>
+        {% endfor %}
+    </div>
+
+    </body>
 {% endblock %}
 
+{% block myjs %}
+    {{ super() }}
 
-{% block page_content %}
-    <div id="container" style="padding:30px">
-        <div class="card w-75 mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Card title</h5>
-                <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
-                <a href="#" class="btn btn-primary">Button</a>
-            </div>
-        </div>
-        <div class="card w-75 mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Card title</h5>
-                <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
-                <a href="#" class="btn btn-primary">Button</a>
-            </div>
-        </div>
+    <script>
+        $(document).ready(function () {
+            $('.contentraw').each(function () {
+                let $div = $(this);
+                let text = $div.text().trim(); // 获取文本内容（自动解码 HTML 实体）
 
+                // 去掉首尾的双引号或单引号
+                let cleaned = text.replace(/^["']|["']$/g, '');
 
-    </div>
+                // 设置为 HTML（因为内容是 HTML 标签）
+                $div.html(cleaned);
+            });
+        });
+    </script>
 {% endblock %}

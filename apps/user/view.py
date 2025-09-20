@@ -5,7 +5,7 @@
 """
 import os.path
 from settings import Config
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_,desc
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
@@ -13,11 +13,12 @@ from .models import User
 from exts.extensions import db
 from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, make_response, g
 from .models import User
-
+from apps.article.models import Article,Article_type
 user_bps = Blueprint(name='user', import_name=__name__)
 import hashlib
 
-#important:新增一个蓝图请求前函数
+
+# important:新增一个蓝图请求前函数
 @user_bps.before_request
 def load_user():
     """在每个请求前加载当前登录用户"""
@@ -42,16 +43,65 @@ def load_user():
         print(f"⚠️ 加载用户失败: {e}")
         g.userme = None
 
-@user_bps.route('/')
+
+# @user_bps.route('/',endpoint='index')
+# def index():
+#     # username = session.get('uname')
+#     # # print('当前用户名:'+username)
+#     # # username = session.get('uname')
+#     # userme = User.query.filter_by(username=username).first()
+#     # if g.userme:
+#     #     return render_template('user/index.html', username=g.userme.username, userme=g.userme)
+#     # else:
+#     #     return redirect('/login')
+#
+#
+#     if request.method == 'POST':
+#         pass
+#     username = session.get('uname')
+#     # article_types = Article_type.query.all()
+#     # g.article_types = article_types
+#     if username != None:
+#         all_article = Article.query.order_by(desc(Article.pdatetime)).all()
+#         # return render_template('article/all.html', all_article=all_article, username=username)
+#         # return render_template('article/all.html', all_article=all_article)
+#         return render_template('user/index.html', all_article=all_article, username=username)
+#     else:
+#         article_types = Article_type.query.all()
+#         g.article_types = article_types
+#         all_article = Article.query.order_by(desc(Article.pdatetime)).all()
+#         # return render_template('article/all.html',all_article=all_article)
+#         return render_template('user/index.html', all_article=all_article)
+
+@user_bps.route('/index',endpoint='index')
 def index():
     # username = session.get('uname')
     # # print('当前用户名:'+username)
     # # username = session.get('uname')
     # userme = User.query.filter_by(username=username).first()
-    if g.userme:
-        return render_template('user/index.html', username=g.userme.username, userme=g.userme)
+    # if g.userme:
+    #     return render_template('user/index.html', username=g.userme.username, userme=g.userme)
+    # else:
+    #     return redirect('/login')
+
+
+    if request.method == 'POST':
+        pass
+    username = session.get('uname')
+    # article_types = Article_type.query.all()
+    # g.article_types = article_types
+    if username != None:
+        # all_article = Article.query.order_by(desc(Article.pdatetime)).all()
+        all_article = Article.query.order_by(-Article.pdatetime).all() #important:sqlalchemy中可以直接写-来进行desc查询约束
+        # return render_template('article/all.html', all_article=all_article, username=username)
+        # return render_template('article/all.html', all_article=all_article)
+        return render_template('user/index.html', all_article=all_article, username=username)
     else:
-        return redirect('/login')
+        article_types = Article_type.query.all()
+        g.article_types = article_types
+        all_article = Article.query.order_by(desc(Article.pdatetime)).all()
+        # return render_template('article/all.html',all_article=all_article)
+        return render_template('user/index.html', all_article=all_article)
 
 
 @user_bps.route('/usercenter', endpoint='usercenter', methods=['GET', 'POST'])
@@ -90,12 +140,14 @@ def usercenter():
 
         # 4. 更新头像
         if icon:
-            icon_name = icon.filename
-            secure_name = check_img(icon_name)
+            icon_name = icon.filename  # important:首先调用files的属性来获取其名称
+            secure_name = check_img(icon_name)  # 然后调用自己的函数来进行检查名称
             if secure_name:
                 file_path = os.path.join(Config.UPLOAD_ICON_FOLDER, secure_name)
-                icon.save(file_path)
+                icon.save(file_path)  # important 调用files的save方法对头像进行存储
                 user.icon = os.path.join('upload/icon', secure_name).replace('\\', '/')
+                # tips:关于为啥这里要写的是upload/icon而不是使用绝对路径，
+                # 因为在前端页面中我们可以使用jinja的url_for('static',filename='')来进行前置路径的获取
             else:
                 return render_template('user/center.html', errorinfo='不支持此格式')
 
@@ -336,7 +388,8 @@ def login():
             print("❌ 未找到用户或已删除")
         if user and check_password_hash(user.password, password):
             session['uname'] = username
-            resp = make_response(redirect('/'))
+            # resp = make_response(redirect('/'))
+            resp = make_response(redirect('/index'))
             resp.set_cookie('remember_username', username, max_age=604800)
             return resp
         else:

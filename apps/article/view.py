@@ -2,11 +2,11 @@
 # @FileName  :view.py
 # @DateTime  :2025/8/27 16:50
 
-from flask import Blueprint, request, render_template, session,g
-from sqlalchemy import and_
+from flask import Blueprint, request, render_template, session, g, redirect
+from sqlalchemy import and_, desc
 
 from apps.user.models import User
-from apps.article.models import Article
+from apps.article.models import Article, Article_type
 from exts.extensions import db
 
 article_bp = Blueprint(name='article', import_name=__name__)
@@ -18,19 +18,27 @@ def article_publish():
         title = request.form.get('title')
         content = request.form.get('content')
         uid = request.form.get('uid')
+        typeid = request.form.get('typeid')
+        print("🔍 typeid 的值:", repr(typeid))
+        if not typeid:
+            return '必须选择文章分类', 400
+        print(f'========={title},{typeid}')
         article = Article()
         article.title = title
         article.content = content
         article.user_id = uid
+        article.type_id = typeid
         db.session.add(article)
         db.session.commit()
-        return '添加成功'
+        return redirect('/all_article')
     uname = session.get('uname')
-    print('要发布文章的用户是'+uname)
+    print('要发布文章的用户是' + uname)
     user = User.query.filter(and_(User.isdelete == False, User.username == uname)).first()
+    # article_types = Article_type.query.all() 因为设置了全局g这里就不需要了
     print(user)
-    print(user.id,user.username)
-    return render_template('article/add_article.html', username=uname,user=user)
+    print(user.id, user.username)
+    # return render_template('article/add_article.html', username=uname, user=user, article_types=article_types)
+    return render_template('article/add_article.html', username=uname, user=user)
 
 
 @article_bp.route('/all_article', methods=['POST', 'GET'], endpoint='all_article')
@@ -38,8 +46,18 @@ def article_all():
     if request.method == 'POST':
         pass
     username = session.get('uname')
-    all_article = Article.query.all()
-    return render_template('article/all.html', all_article=all_article,username=username)
+    # article_types = Article_type.query.all()
+    # g.article_types = article_types
+    if username != None:
+        all_article = Article.query.order_by(desc(Article.pdatetime)).all()
+        return render_template('article/all.html', all_article=all_article, username=username)
+        # return render_template('article/all.html', all_article=all_article)
+    else:
+        article_types = Article_type.query.all()
+        g.article_types = article_types
+        all_article = Article.query.order_by(desc(Article.pdatetime)).all()
+        return render_template('article/all.html',all_article=all_article)
+
 
 
 @article_bp.route('/all1', endpoint='all1')
