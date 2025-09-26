@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}
+    文章详情页
+{% endblock %}
+
+{% block style %}
+    {{ super() }}
+{% endblock %}
+
+{% block page_content %}
+    <div class="container" style="padding: 20px">
+        <div class="card w-95 mb-3" style="padding: 7px;margin-top: 15px;overflow: hidden">
+            <p>发布时间:{{ article.pdatetime }}&nbsp;&nbsp;所属类别:{{ article.article_type.typename }}</p>
+            <p><i class="bi bi-check-circle" id="click_"></i>点击量:{{ article.click_num }} &nbsp;&nbsp;
+                <i class="bi bi-star" id="star"></i>收藏量:{{ article.save_num }}&nbsp;
+                <i class="bi bi-hand-thumbs-up" id="loveit"></i><span id="love-count">点赞量:{{ article.love_num }}</span></p>
+            <p>作者:{{ article.user.username }}&nbsp;&nbsp</p>
+            {#            <h3 style="color: #30423b"><a href="{{ url_for("article.detail") }}?article_id={{ article.id }}">{{ article.title }}</a></h3>#}
+            <h3>{{ article.title }}</h3>
+            <div class="contentraw">
+                {{ article.content }}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block myjs %}
+    {{ super() }}
+
+    <script>
+        /*处理的是富文本文档的显示*/
+        $(document).ready(function () {
+            $('.contentraw').each(function () {
+                let $div = $(this);
+                let text = $div.text().trim(); // 获取文本内容（自动解码 HTML 实体）
+
+                // 去掉首尾的双引号或单引号
+                //important:这里用的是正则表达式来匹配开头和结尾的单引号和双引号,刚好能让被引号包含的HTML标签生效
+                let cleaned = text.replace(/^["']|["']$/g, '');
+
+                // 设置为 HTML（因为内容是 HTML 标签）
+                $div.html(cleaned);
+            });
+
+
+
+            /*下面处理的是各个文字图标的状态*/
+
+            $('#click_').hover(function (){
+                 $(this).toggleClass('bi-check-circle bi-check-circle-fill text-success')
+            }
+
+            );
+            $('#star').hover(function () {
+                // 在鼠标悬停时切换到 'bi-star-fill' 和 'text-danger'
+                $(this).toggleClass('bi-star bi-star-fill text-success');
+            });
+            $('#loveit').hover(
+                function (){
+                    $(this).toggleClass('bi-hand-thumbs-up bi-hand-thumbs-up-fill text-danger')
+                }
+            );
+
+            /*点赞的实现*/
+            $('#loveit').click(function (e){
+                e.preventDefault();
+                $.get('{{ url_for('article.love') }}',{artid:{{article.id}}},function (data){
+                    if(data.success){
+                        $('#love-count').text(data.num)
+                        $('#loveit').toggleClass('bi-hand-thumbs-up bi-hand-thumbs-up-fill text-danger')
+                    }
+
+                }).fail(function (){
+                    alert('点赞失败,请登录后重新尝试')
+                })
+            })
+
+        });
+
+
+    </script>
+{% endblock %}

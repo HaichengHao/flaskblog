@@ -5,15 +5,6 @@
 {% block style %}
     {{ super() }}
     <style>
-        {#div.myc:hover{#}
-        {#height: 400px !important;#}
-        {#    transition: 0.15s all linear;#}
-        {#    height: 200px;#}
-        {#transform: scale(1.1);#}
-        {#z-index: 1000000;#}
-        {#    overflow: hidden;#}
-        {
-        #}#}
     </style>
 
 {% endblock %}
@@ -21,26 +12,63 @@
 
     <body>
     <div class="container" style="padding: 20px;margin-bottom: 40px">
-
-        {% for article in all_article %}
-            <div class="card myc w-95 mb-3" style="padding: 7px;margin-top: 15px;">
-                <h4 style="color: #30423b;">{{ article.title }}</h4>
-                <p>用户名:{{ article.user.username }}&nbsp;&nbsp</p>
-                <p>发布时间:{{ article.pdatetime }}</p>
-                <p>所属类别:{{ article.article_type.typename }}</p> <!--利用backref来调用article的article_type的typename-->
-                <div class="contentraw" style="
-white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 60%;
-    height: 2em;
-    line-height: 2em;">
-                    {{ article.content }}
-                </div>
-
+        {#        {% for article in all_article %}#}
+        {#            <div class="card w-95 mb-3" style="padding: 7px;margin-top: 15px;overflow: hidden">#}
+        {#                <h3 style="color: #30423b">{{ article.title }}</h3>#}
+        {#                <div class="contentraw">#}
+        {#                    {{ article.content }}#}
+        {#                </div>#}
+        {#            <p>发布时间:{{ article.pdatetime }}&nbsp;&nbsp;所属类别:{{ article.article_type.typename }}</p>#}
+        {#            <p>点击量:{{ article.click_num }} &nbsp;&nbsp;收藏量:{{ article.love_num }}</p>#}
+        {#            <p>作者:{{ article.user.username }}&nbsp;&nbsp</p>#}
+        {#            </div>#}
+        {#        {% endfor %}#}
+        <!--important:新修改之加上分页-->
+        {% for article in pagination.items %}
+            <div class="card w-95 mb-3" style="padding: 7px;margin-top: 15px;overflow: hidden">
+                <h3 style="color: #30423b">
+                    <a class="text-decoration-none text-reset article-link"
+                                              href="{{ url_for("article.detail") }}?article_id={{ article.id }}"
+                                              data-artid="{{ article.id }}">{{ article.title }}</a></h3>
+                {#                <div class="contentraw">#}
+                {#                    {{ article.content }}#}
+                {#                </div>#}
+                <!--important:关于为什么要做移除,因为设置了点击链接访问详情页,所以不必再进行全部展示-->
+                <p>发布时间:{{ article.pdatetime }}&nbsp;&nbsp;所属类别:{{ article.article_type.typename }}</p>
+                <p>点击量:<span id="clicknum-{{ article.id }}">{{ article.click_num }}</span> &nbsp;&nbsp;收藏量:{{ article.save_num }}&nbsp;&nbsp;点赞量:{{ article.love_num }}
+                </p>
+                <p>作者:{{ article.user.username }}&nbsp;&nbsp</p>
             </div>
         {% endfor %}
+
+        <nav aria-label="Page navigation example" class="col-md-6 offset-md-5">
+            <ul class="pagination">
+                <li class="page-item">
+                    <a class="page-link" {% if pagination.has_prev %}
+                       href="{{ url_for('user.index') }}?page={{ pagination.prev_num }}"{% else %}href="{{ url_for('user.index') }}?page=1{% endif %}"
+                       aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% for p in range(1,pagination.pages + 1) %}
+                    <!--important:pagination.page获取当前所在页,如果当前所在页和对应的p页码数一样，那就显示激活状态-->
+                    <li {% if pagination.page == p %} class=" page-item active"{% else %}
+                                                      class="page-item"  {% endif %}><a class="page-link"
+                                                                                        href="{{ url_for('user.index') }}?page={{ p }}">{{ p }}</a>
+                    </li>
+                {% endfor %}
+
+                <a class="page-link" {% if pagination.has_next %}
+                   href="{{ url_for('user.index') }}?page={{ pagination.next_num }}"
+                   {% else %}href="{{ url_for('user.index') }}?page=1"{% endif %} aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+                </li>
+            </ul>
+        </nav>
+
     </div>
+
 
     </body>
 {% endblock %}
@@ -55,11 +83,29 @@ white-space: nowrap;
                 let text = $div.text().trim(); // 获取文本内容（自动解码 HTML 实体）
 
                 // 去掉首尾的双引号或单引号
+                //important:这里用的是正则表达式来匹配开头和结尾的单引号和双引号,刚好能让被引号包含的HTML标签生效
                 let cleaned = text.replace(/^["']|["']$/g, '');
 
                 // 设置为 HTML（因为内容是 HTML 标签）
                 $div.html(cleaned);
             });
+            {#$('.article-link').click(#}
+            {#    function (e) {#}
+            {#        e.preventDefault();//默认阻止跳转#}
+            {#        const artid = $(this).attr('artid')#}
+            {#        console.log(artid)#}
+            {#        const href=$(this).attr('href')#}
+            {#        console.log(artid)#}
+            {#        //先发请求，增加点击量#}
+            {#        $.get('{{ url_for('article.clicknumadd') }}', {artid: artid}, function (data) {#}
+            {#            if (data.success) {#}
+            {#                $('#clicknum-'+artid).text(data.num)//更新列表页数字,这块儿有问题#}
+            {#            }#}
+            {#        }).always(()=>{#}
+            {#            location.href = href //然后再跳转#}
+            {#        })#}
+            {#    }#}
+            {#)#}
         });
     </script>
 {% endblock %}

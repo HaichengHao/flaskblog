@@ -2,7 +2,7 @@
 # @FileName  :view.py
 # @DateTime  :2025/8/27 16:50
 
-from flask import Blueprint, request, render_template, session, g, redirect
+from flask import Blueprint, request, render_template, session, g, redirect, jsonify
 from sqlalchemy import and_, desc
 
 from apps.user.models import User
@@ -56,8 +56,7 @@ def article_all():
         article_types = Article_type.query.all()
         g.article_types = article_types
         all_article = Article.query.order_by(desc(Article.pdatetime)).all()
-        return render_template('article/all.html',all_article=all_article)
-
+        return render_template('article/all.html', all_article=all_article)
 
 
 @article_bp.route('/all1', endpoint='all1')
@@ -65,3 +64,50 @@ def all_article():
     id = request.args.get('id')
     user = User.query.get(id)
     return render_template('article/all1.html', user=user)
+
+
+# tips:制定文章详情页路由
+@article_bp.route('/detail', endpoint='detail')
+def article_detail():
+    username = session.get('uname')
+    article_id = request.args.get('article_id')
+    article = Article.query.get(article_id)
+    viewed_articles = session.get('viewed_articles',[])
+    if article_id not in viewed_articles:
+        article.click_num+=1
+        db.session.commit()
+
+        #记录已查看
+        viewed_articles.append(article_id)
+        session['viewed_articles'] =viewed_articles
+    return render_template('article/detail.html', article=article, username=username)
+
+
+# @article_bp.route('/clicknumadd', endpoint='clicknumadd')
+# def clicknumadd_route():
+#     artid = request.args.get('artid')
+#     article = Article.query.get(artid)
+#     article.click_num += 1
+#     db.session.commit()
+#     return jsonify(
+#         {
+#             'success': True,
+#             'num': article.click_num,
+#             'artid': artid
+#         }
+#     )
+
+
+@article_bp.route('/love', endpoint='love')
+def article_love():
+    artid = request.args.get('artid')
+    article = Article.query.get(artid)
+    article.love_num += 1
+    db.session.commit()
+    return jsonify(
+        {
+            'success': True,
+            'num': article.love_num,
+            'artid': artid
+        }
+    )

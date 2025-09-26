@@ -5,7 +5,7 @@
 """
 import os.path
 from settings import Config
-from sqlalchemy import and_, or_,desc
+from sqlalchemy import and_, or_, desc
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
@@ -13,7 +13,8 @@ from .models import User
 from exts.extensions import db
 from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, make_response, g
 from .models import User
-from apps.article.models import Article,Article_type
+from apps.article.models import Article, Article_type
+
 user_bps = Blueprint(name='user', import_name=__name__)
 import hashlib
 
@@ -73,7 +74,7 @@ def load_user():
 #         # return render_template('article/all.html',all_article=all_article)
 #         return render_template('user/index.html', all_article=all_article)
 
-@user_bps.route('/index',endpoint='index')
+@user_bps.route('/index', endpoint='index')
 def index():
     # username = session.get('uname')
     # # print('当前用户名:'+username)
@@ -84,24 +85,60 @@ def index():
     # else:
     #     return redirect('/login')
 
-
     if request.method == 'POST':
         pass
+
+    #important：注意这里一定要做强制类型转换否则就会报错
+    page_num = int(request.args.get('page',1)) #important:接受页码数
+    print(page_num)
     username = session.get('uname')
-    # article_types = Article_type.query.all()
-    # g.article_types = article_types
+    article_types = Article_type.query.all()
+    g.article_types = article_types
+    pagination = Article.query.order_by(desc(Article.pdatetime)).paginate(page=page_num, per_page=3)
+
     if username != None:
         # all_article = Article.query.order_by(desc(Article.pdatetime)).all()
-        all_article = Article.query.order_by(-Article.pdatetime).all() #important:sqlalchemy中可以直接写-来进行desc查询约束
+        # all_article = Article.query.order_by(-Article.pdatetime).all() #important:sqlalchemy中可以直接写-来进行desc查询约束
         # return render_template('article/all.html', all_article=all_article, username=username)
         # return render_template('article/all.html', all_article=all_article)
-        return render_template('user/index.html', all_article=all_article, username=username)
-    else:
-        article_types = Article_type.query.all()
-        g.article_types = article_types
-        all_article = Article.query.order_by(desc(Article.pdatetime)).all()
+        # return render_template('user/index.html', all_article=all_article, username=username)
+
+        # tips:新修改加上分页
+        return render_template('user/index.html', pagination=pagination, username=username)
+    else:  # tips:即使没登陆也要显示首页的文章分类
+        # article_types = Article_type.query.all()
+        # g.article_types = article_types
+        # all_article = Article.query.order_by(desc(Article.pdatetime)).all()
+        # # important:新的问题,对文章进行分页,采用sqlalchemy的pageinate()对其进行分页,
+        # pagination = Article.query.order_by(desc(Article.pdatetime)).paginate(page=1, per_page=3)
+        # print('======~~~~~======~~~~~====******')
+        # print(pagination.items)  # important:按照paginate制定的page和per_page第一顺位在数据库中命中的对象
+        # print(pagination.page)  # important:当前页数！！！！注意它是从1开始的
+        # # print(pagenation.total_pages)
+        # print(pagination.prev_num)  # important:上一页
+        # print(pagination.next_num)  # important:下一页
+        # print(pagination.has_next)  # important:判断是否有下一页,返回的是布尔类型
+        # print(pagination.has_prev)  # important: 判断是否有上一页
+        # print(pagination.pages)  # important:总页数,这是最方便的一点,paginate直接帮我们计算好所需要的页数,方便我们进行分页
+        # print(pagination.total)  # important:数据库中一共有几条记录
+        '''
+        [<Article 18>, <Article 17>, <Article 16>]
+        1
+        None
+        2
+        True
+        False
+        6
+        16
+
+        '''
+
         # return render_template('article/all.html',all_article=all_article)
-        return render_template('user/index.html', all_article=all_article)
+        # return render_template('user/index.html', all_article=all_article)
+
+        # important:因为我们要使用paginate,那么要进行相应的修改
+
+        return render_template('user/index.html', pagination=pagination)
 
 
 @user_bps.route('/usercenter', endpoint='usercenter', methods=['GET', 'POST'])
