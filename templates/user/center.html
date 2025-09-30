@@ -5,7 +5,14 @@
 {% block page_content %}
     <div class="container" style="padding: 30px">
         <div>用户名{{ current_user() }}</div>
-        <form action="{{ url_for('user.usercenter') }}" method="post">
+{#        <p><img src="{% if userme.icon %}{{ url_for('static',filename=userme.icon) }}{% else %}{{ url_for('static',filename='imgs/touxiang.png') }}{% endif %}" alt="头像"#}
+{#                style="width: 70px;height: 70px ;margin-bottom: 4px"><br>#}
+{#            </p>#}
+        <form action="{{ url_for('user.usercenter') }}" method="post" enctype="multipart/form-data"> <!--important:注意,如果表单中有图片路径等的话要使用enctype-->
+            <p><img src="{% if g.userme.icon %}{{ url_for('static',filename=g.userme.icon) }}{% else %}{{ url_for('static',filename='imgs/touxiang.png') }}{% endif %}" alt="头像"
+                style="width: 70px;height: 70px ;"><br>
+            </p>
+            <p><input type="file" id="upyourtouxiang" name="icon" placeholder="选择头像"><br>头像支持'jpg', 'png', 'svg', 'gif', 'bmp'格式</p>
             <p><input type="text" name="userme" value="{{ current_user() }}" contenteditable="false"
                       hidden="hidden"></p>
             <p><input type="text" name="newusername" placeholder="输入新的用户名"></p>
@@ -16,5 +23,9 @@
         </form>
     </div>
     <p>{{ errorinfo }}</p>
+
+{% endblock %}
+
+{% block myjs %}
 
 {% endblock %}

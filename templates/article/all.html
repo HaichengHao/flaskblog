@@ -35,14 +35,41 @@
 {% block page_content %}
 
     <body>
-    {% for article in all_article %}
-        <div class="art">
-            <h3>{{ article.title }}</h3>
-            <p>{{ article.user.username }}&nbsp;&nbsp;{{ article.pdatetime }}</p>
-            <div>
-                {{ article.content }}
+    <div class="container" style="padding: 20px;margin-bottom: 40px">
+
+        {% for article in all_article %}
+            <div class="card w-95 mb-3" style="padding: 7px;margin-top: 15px;overflow: hidden">
+                <h3 style="color: #30423b">{{ article.title }}</h3>
+                <p>作者:{{ article.user.username }}&nbsp;&nbsp</p>
+{#                <p>发布时间:{{ article.pdatetime }}</p>#}
+{#                <p>所属类别:{{ article.article_type.typename }}</p> <!--利用backref来调用article的article_type的typename-->#}
+                <div class="contentraw">
+                    {{ article.content }}
+                </div>
+            <p>发布时间:{{ article.pdatetime }}&nbsp;&nbsp;所属类别:{{ article.article_type.typename }}</p>
+            <p>点击量:{{ article.click_num }} &nbsp;&nbsp;收藏量:{{ article.love_num }}</p>
             </div>
-        </div>
-    {% endfor %}
+        {% endfor %}
+    </div>
+
     </body>
+{% endblock %}
+
+{% block myjs %}
+    {{ super() }}
+
+    <script>
+        $(document).ready(function () {
+            $('.contentraw').each(function () {
+                let $div = $(this);
+                let text = $div.text().trim(); // 获取文本内容（自动解码 HTML 实体）
+
+                // 去掉首尾的双引号或单引号
+                let cleaned = text.replace(/^["']|["']$/g, '');
+
+                // 设置为 HTML（因为内容是 HTML 标签）
+                $div.html(cleaned);
+            });
+        });
+    </script>
 {% endblock %}

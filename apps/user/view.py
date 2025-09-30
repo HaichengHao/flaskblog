@@ -3,66 +3,244 @@
 @Editor  : 百年
 @Date    :2025/8/10 10:04 
 """
-from sqlalchemy import and_, or_
+import os.path
+from settings import Config
+from sqlalchemy import and_, or_, desc
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 
 from .models import User
 from exts.extensions import db
 from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, make_response, g
 from .models import User
+from apps.article.models import Article, Article_type
 
 user_bps = Blueprint(name='user', import_name=__name__)
 import hashlib
 
 
-# # 用户中心
-# @user_bps.route('/')
-# def user_center():
-#     users = User.query.filter_by(isdelete=0).all()
-#     print(users)
-#     return render_template('user/usercenter.html', users=users)
-@user_bps.route('/')
-def index():
+# important:新增一个蓝图请求前函数
+@user_bps.before_request
+def load_user():
+    """在每个请求前加载当前登录用户"""
     username = session.get('uname')
-    # print('当前用户名:'+username)
+
+    # 未登录
+    if not username:
+        g.userme = None
+        return
+
+    # 已登录，查询有效用户（逻辑删除的不算）
+    try:
+        user = User.query.filter_by(username=username, isdelete=0).first()
+        if user:
+            g.userme = user
+        else:
+            # 用户不存在或已被删除
+            session.clear()
+            g.userme = None
+    except Exception as e:
+        # 数据库异常兜底
+        print(f"⚠️ 加载用户失败: {e}")
+        g.userme = None
+
+
+# @user_bps.route('/',endpoint='index')
+# def index():
+#     # username = session.get('uname')
+#     # # print('当前用户名:'+username)
+#     # # username = session.get('uname')
+#     # userme = User.query.filter_by(username=username).first()
+#     # if g.userme:
+#     #     return render_template('user/index.html', username=g.userme.username, userme=g.userme)
+#     # else:
+#     #     return redirect('/login')
+#
+#
+#     if request.method == 'POST':
+#         pass
+#     username = session.get('uname')
+#     # article_types = Article_type.query.all()
+#     # g.article_types = article_types
+#     if username != None:
+#         all_article = Article.query.order_by(desc(Article.pdatetime)).all()
+#         # return render_template('article/all.html', all_article=all_article, username=username)
+#         # return render_template('article/all.html', all_article=all_article)
+#         return render_template('user/index.html', all_article=all_article, username=username)
+#     else:
+#         article_types = Article_type.query.all()
+#         g.article_types = article_types
+#         all_article = Article.query.order_by(desc(Article.pdatetime)).all()
+#         # return render_template('article/all.html',all_article=all_article)
+#         return render_template('user/index.html', all_article=all_article)
+
+@user_bps.route('/index', endpoint='index')
+def index():
     # username = session.get('uname')
-    if username:
-        return render_template('user/index.html', username=username)
-    else:
-        return redirect('/login')
+    # # print('当前用户名:'+username)
+    # # username = session.get('uname')
+    # userme = User.query.filter_by(username=username).first()
+    # if g.userme:
+    #     return render_template('user/index.html', username=g.userme.username, userme=g.userme)
+    # else:
+    #     return redirect('/login')
+
+    if request.method == 'POST':
+        pass
+
+    #important：注意这里一定要做强制类型转换否则就会报错
+    page_num = int(request.args.get('page',1)) #important:接受页码数
+    print(page_num)
+    username = session.get('uname')
+    article_types = Article_type.query.all()
+    g.article_types = article_types
+    pagination = Article.query.order_by(desc(Article.pdatetime)).paginate(page=page_num, per_page=3)
+
+    if username != None:
+        # all_article = Article.query.order_by(desc(Article.pdatetime)).all()
+        # all_article = Article.query.order_by(-Article.pdatetime).all() #important:sqlalchemy中可以直接写-来进行desc查询约束
+        # return render_template('article/all.html', all_article=all_article, username=username)
+        # return render_template('article/all.html', all_article=all_article)
+        # return render_template('user/index.html', all_article=all_article, username=username)
+
+        # tips:新修改加上分页
+        return render_template('user/index.html', pagination=pagination, username=username)
+    else:  # tips:即使没登陆也要显示首页的文章分类
+        # article_types = Article_type.query.all()
+        # g.article_types = article_types
+        # all_article = Article.query.order_by(desc(Article.pdatetime)).all()
+        # # important:新的问题,对文章进行分页,采用sqlalchemy的pageinate()对其进行分页,
+        # pagination = Article.query.order_by(desc(Article.pdatetime)).paginate(page=1, per_page=3)
+        # print('======~~~~~======~~~~~====******')
+        # print(pagination.items)  # important:按照paginate制定的page和per_page第一顺位在数据库中命中的对象
+        # print(pagination.page)  # important:当前页数！！！！注意它是从1开始的
+        # # print(pagenation.total_pages)
+        # print(pagination.prev_num)  # important:上一页
+        # print(pagination.next_num)  # important:下一页
+        # print(pagination.has_next)  # important:判断是否有下一页,返回的是布尔类型
+        # print(pagination.has_prev)  # important: 判断是否有上一页
+        # print(pagination.pages)  # important:总页数,这是最方便的一点,paginate直接帮我们计算好所需要的页数,方便我们进行分页
+        # print(pagination.total)  # important:数据库中一共有几条记录
+        '''
+        [<Article 18>, <Article 17>, <Article 16>]
+        1
+        None
+        2
+        True
+        False
+        6
+        16
+
+        '''
+
+        # return render_template('article/all.html',all_article=all_article)
+        # return render_template('user/index.html', all_article=all_article)
+
+        # important:因为我们要使用paginate,那么要进行相应的修改
+
+        return render_template('user/index.html', pagination=pagination)
 
 
 @user_bps.route('/usercenter', endpoint='usercenter', methods=['GET', 'POST'])
 def usercenter():
-    username = session.get('uname')
-    userme = User.query.filter_by(username=username).first()
+    # username = session.get('uname')
+    # userme = User.query.filter_by(username=username).first()
+
     if request.method == 'GET':
-        return render_template('user/center.html', username=username, userme=userme)
+        return render_template('user/center.html', username=g.userme.username, userme=g.userme)
     else:
+        # 获取表单数据
+        username = request.form.get('userme')  # 当前用户名（用于查询）
+        newusername = request.form.get('newusername')
+        password = request.form.get('password')
+        repassword = request.form.get('repassword')
+        phone = request.form.get('phone')
+        icon = request.files.get('icon')
+
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return "用户不存在", 404
+
+        # 1. 更新用户名
+        if newusername:
+            user.username = newusername
+
+        # 2. 只有当用户输入了新密码时才更新密码
+        if password:
+            if password != repassword:
+                return render_template('user/center.html', errorinfo='两次输入的密码不一致，请重新输入')
+            user.password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
+
+        # 3. 更新手机号
+        if phone:
+            user.phone = phone
+
+        # 4. 更新头像
+        if icon:
+            icon_name = icon.filename  # important:首先调用files的属性来获取其名称
+            secure_name = check_img(icon_name)  # 然后调用自己的函数来进行检查名称
+            if secure_name:
+                file_path = os.path.join(Config.UPLOAD_ICON_FOLDER, secure_name)
+                icon.save(file_path)  # important 调用files的save方法对头像进行存储
+                user.icon = os.path.join('upload/icon', secure_name).replace('\\', '/')
+                # tips:关于为啥这里要写的是upload/icon而不是使用绝对路径，
+                # 因为在前端页面中我们可以使用jinja的url_for('static',filename='')来进行前置路径的获取
+            else:
+                return render_template('user/center.html', errorinfo='不支持此格式')
+
+        db.session.commit()
+
+        # 如果用户名变了，更新 session
+        if newusername:
+            session['uname'] = newusername
+
+        session.clear()  # 强制重新登录
+        return redirect('/login')
+
+
+ALLOWED_EXTENSIONS = ['jpg', 'png', 'svg', 'gif', 'bmp']
+
+
+def check_img(file_name):
+    suffix = file_name.split('.')[-1]
+    if suffix in ALLOWED_EXTENSIONS:
+        icon_name = secure_filename(file_name)
+        return icon_name
+    else:
+        return False
+
+
+# 用户数据更新
+@user_bps.route('/upgrade_user_info', endpoint='ugui')
+def upgrade_user_info_route():
+    username = session.get('uname')
+    if request.method == 'POST':
+        # userme = User.query.filter_by(username=username).first()
         # POST 处理
         username = request.form.get('userme')
         newusername = request.form.get('newusername')
         password = request.form.get('password')
         repassword = request.form.get('repassword')
         phone = request.form.get('phone')
+        icon = request.files.get('icon')
 
         if password != repassword:
             return render_template('user/center.html', errorinfo='两次输入的密码不一致，请重新输入')
 
         user = User.query.filter_by(username=username).first()
-        # if not user:
-        #     return render_template('user/center.html', errorinfo="用户不存在，无法修改")
-
         # 更新用户名（如果提供了新用户名）
         if newusername:
             user.username = newusername
-
         # 更新密码（已加密）
-        user.password = hashlib.sha256(password.encode('utf-8')).hexdigest()
+        user.password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
 
         # 更新手机号
         if phone:
             user.phone = phone
+
+        # 更新头像
+        if icon is not None:
+            user.icon = icon
 
         db.session.commit()
         # 修改之后应该直接退出重新登陆
@@ -216,9 +394,9 @@ def login():
     if request.method == 'GET':
         # # 从 cookie 获取记住的用户名
         # username = request.cookies.get('remember_username')
-        # print('拿到的cookie'+username)
-        # if username==None:
-        #     return render_template('user/login.html',username=username)
+        # # print('拿到的cookie'+username)
+        # if username == None:
+        #     return render_template('user/login.html', username=username)
         # else:
         #     return render_template('user/login.html')
         return render_template('user/login.html')
@@ -230,13 +408,25 @@ def login():
     print(username, password)
     phone = request.form.get('phone')
     vcode = request.form.get('vcode')  # 验证码登录用
-
+    # 👇 加在这里！
+    print("👉 Form 数据:", request.form.to_dict())
+    print("👉 username:", repr(username))
+    print("👉 password:", repr(password))
+    print("👉 phone:", repr(phone))
+    print("👉 vcode:", repr(vcode))
     # 场景1：用户名密码登录
     if username and password:
         user = User.query.filter_by(username=username, isdelete=0).first()
+        if user:
+            print("✅ 找到用户:", user.username)
+            print("✅ 数据库存储的密码哈希:", user.password)
+            print("✅ check_password_hash 结果:", check_password_hash(user.password, password))
+        else:
+            print("❌ 未找到用户或已删除")
         if user and check_password_hash(user.password, password):
             session['uname'] = username
-            resp = make_response(redirect('/'))
+            # resp = make_response(redirect('/'))
+            resp = make_response(redirect('/index'))
             resp.set_cookie('remember_username', username, max_age=604800)
             return resp
         else:

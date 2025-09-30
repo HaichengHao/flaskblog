@@ -15,7 +15,7 @@ class Config:
     # 3. 是否打印 SQL 语句（开发时有用）
     SQLALCHEMY_ECHO = True  # 开发时打开，生产关闭
 
-    # 4. 连接池大小（默认 5）
+    # 4. 连接池大小（默认 10）
     SQLALCHEMY_POOL_SIZE = 10
 
     # 5. 连接池超时时间（秒）
@@ -33,6 +33,17 @@ class Config:
 
     #9.设置session需要的SECRET_KEY
     SECRET_KEY = ';ouahsef;euahiuhiluh'
+
+
+    #10.配置项目路径
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__)) #important:得到当前文件的文件夹
+    STATIC_DIR = os.path.join(BASE_DIR, 'static')
+    TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
+    #头像上传目录
+    UPLOAD_ICON_FOLDER = os.path.join(STATIC_DIR, 'upload\icon')
+    #相册上传目录
+    UPLOAD_PHOTO_FOLDER = os.path.join(STATIC_DIR, 'upload/photo')
+
 # 配置开发配置
 class devConfig(Config):
     DEBUG = True

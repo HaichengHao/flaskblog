@@ -4,13 +4,14 @@
 @Date    :2025/8/10 8:43 
 """
 import os
-from flask import Flask, request, session, redirect, jsonify
+from flask import Flask, request, session, redirect, jsonify, g
 from exts.extensions import db, migrate
-from .config import configdict
+# from .config import configdict
+from settings import configdict
 from .user.view import user_bps
 from .article.view import article_bp
 from apps.user.models import User
-from apps.article.models import Article
+from apps.article.models import Article, Article_type
 from apps.goods.view import goods_bp
 from apps.goods.models import *
 
@@ -37,7 +38,7 @@ def create_app(configname='default'):
         if request.path.startswith('/static/') or request.path == '/favicon.ico':
             return
         # important:设置白名单,不然用户会卡循环登录最后报错,白名单里放的是无需登录就能访问的页面
-        if request.path in ["/login", '/login_verifycode', '/register', '/checkphone']:
+        if request.path in ["/login", '/index','/login_verifycode', '/register', '/checkphone']:
             return
 
         print('请求前操作')
@@ -51,6 +52,20 @@ def create_app(configname='default'):
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify(code=401, msg='未登录'), 401
             return redirect('/login')
+
+        #important：下面放置全局g
+        username = session.get('uname')
+        if not username:
+            g.userme = None
+        else:
+            try:
+                user = User.query.filter_by(username=username, isdelete=0).first()
+                article_types = Article_type.query.all() #tips:新增查询所有文章的类型
+                g.userme = user
+                g.article_types = article_types
+            except Exception as e:
+                print(f"⚠️ 查询用户失败: {e}")
+                g.userme = None
 
     @app.template_global()
     def current_user():
