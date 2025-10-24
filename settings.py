@@ -18,7 +18,7 @@ class Config:
     SQLALCHEMY_ECHO = True  # 开发时打开，生产关闭
 
     # 4. 连接池大小（默认 10）
-    SQLALCHEMY_POOL_SIZE = 10
+    SQLALCHEMY_POOL_SIZE = 30
 
     # 5. 连接池超时时间（秒）
     SQLALCHEMY_POOL_TIMEOUT = 30
@@ -35,7 +35,7 @@ class Config:
 
     # 9.设置session需要的SECRET_KEY
     SECRET_KEY = ';ouahsef;euahiuhiluh'
-
+    #部署
     # 10.配置项目路径
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # important:得到当前文件的文件夹
     STATIC_DIR = os.path.join(BASE_DIR, 'static')

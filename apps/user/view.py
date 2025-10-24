@@ -11,8 +11,9 @@ from werkzeug.utils import secure_filename
 
 from .models import User
 from exts.extensions import db
+from ..utils.qiniu_cloud import upload_qiniu, del_qiniu
 from flask import Blueprint, request, render_template, redirect, url_for, session, jsonify, make_response, g
-from .models import User
+from .models import User, Photo, Aboutme
 from apps.article.models import Article, Article_type
 
 user_bps = Blueprint(name='user', import_name=__name__)
@@ -24,7 +25,8 @@ import hashlib
 def load_user():
     """在每个请求前加载当前登录用户"""
     username = session.get('uname')
-
+    article_types = Article_type.query.all()
+    g.article_types = article_types
     # 未登录
     if not username:
         g.userme = None
@@ -88,13 +90,20 @@ def index():
     if request.method == 'POST':
         pass
 
-    #important：注意这里一定要做强制类型转换否则就会报错
-    page_num = int(request.args.get('page',1)) #important:接受页码数
+    # important:新增处理文章分类!!!
+    articletype = request.args.get('articletype', default='')
+    # if articletype==None:
+    # important：注意这里一定要做强制类型转换否则就会报错
+    page_num = int(request.args.get('page', 1))  # important:接受页码数
     print(page_num)
     username = session.get('uname')
     article_types = Article_type.query.all()
     g.article_types = article_types
-    pagination = Article.query.order_by(desc(Article.pdatetime)).paginate(page=page_num, per_page=3)
+    if articletype == "":
+        pagination = Article.query.order_by(desc(Article.pdatetime)).paginate(page=page_num, per_page=3)
+    else:
+        pagination = Article.query.filter(Article.type_id == articletype).order_by(desc(Article.pdatetime)).paginate(
+            page=page_num, per_page=3)
 
     if username != None:
         # all_article = Article.query.order_by(desc(Article.pdatetime)).all()
@@ -198,7 +207,7 @@ def usercenter():
         return redirect('/login')
 
 
-ALLOWED_EXTENSIONS = ['jpg', 'png', 'svg', 'gif', 'bmp']
+ALLOWED_EXTENSIONS = ['jpg', 'png', 'svg', 'gif', 'bmp', 'jpeg']
 
 
 def check_img(file_name):
@@ -208,44 +217,6 @@ def check_img(file_name):
         return icon_name
     else:
         return False
-
-
-# 用户数据更新
-@user_bps.route('/upgrade_user_info', endpoint='ugui')
-def upgrade_user_info_route():
-    username = session.get('uname')
-    if request.method == 'POST':
-        # userme = User.query.filter_by(username=username).first()
-        # POST 处理
-        username = request.form.get('userme')
-        newusername = request.form.get('newusername')
-        password = request.form.get('password')
-        repassword = request.form.get('repassword')
-        phone = request.form.get('phone')
-        icon = request.files.get('icon')
-
-        if password != repassword:
-            return render_template('user/center.html', errorinfo='两次输入的密码不一致，请重新输入')
-
-        user = User.query.filter_by(username=username).first()
-        # 更新用户名（如果提供了新用户名）
-        if newusername:
-            user.username = newusername
-        # 更新密码（已加密）
-        user.password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
-
-        # 更新手机号
-        if phone:
-            user.phone = phone
-
-        # 更新头像
-        if icon is not None:
-            user.icon = icon
-
-        db.session.commit()
-        # 修改之后应该直接退出重新登陆
-        session.clear()
-        return redirect('/')
 
 
 # 删除数据
@@ -270,45 +241,6 @@ def del_data():
     db.session.commit()
     # 然后重定向到用户中心界面
     return redirect('/')
-
-
-# 更新数据
-@user_bps.route('/modifydata', methods=['POST', 'GET'], endpoint='modifydata')
-def modidata():
-    if request.method == 'GET':
-        username = session.get('uname')
-        user = User.query.filter_by(username=username).first()
-        if not user:
-            return "用户不存在", 404
-        return render_template('user/custom_data.html', user=user)
-
-    # POST 处理
-    username = request.form.get('username')
-    newusername = request.form.get('newusername')
-    password = request.form.get('password')
-    repassword = request.form.get('repassword')
-    phone = request.form.get('phone')
-
-    if password != repassword:
-        return render_template('user/custom_data.html', errorinfo='两次输入的密码不一致，请重新输入')
-
-    user = User.query.filter_by(username=username).first()
-    if not user:
-        return render_template('user/custom_data.html', errorinfo="用户不存在，无法修改")
-
-    # 更新用户名（如果提供了新用户名）
-    if newusername:
-        user.username = newusername
-
-    # 更新密码（已加密）
-    user.password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
-
-    # 更新手机号
-    if phone:
-        user.phone = phone
-
-    db.session.commit()
-    return redirect(url_for('user.index'))
 
 
 # 用户注册
@@ -399,6 +331,9 @@ def login():
         #     return render_template('user/login.html', username=username)
         # else:
         #     return render_template('user/login.html')
+        # articletype = request.args.get('articletype', default='')
+        # article_types = Article_type.query.all()
+        # g.article_types = article_types
         return render_template('user/login.html')
 
     # POST 请求：判断是哪种登录方式
@@ -536,6 +471,7 @@ def search():
 
 
 # 仅作为测试
+"""
 @user_bps.route('/select', methods=['GET', 'POST'], endpoint='select')
 def select_route():
     user = User.query.get(1)  # 按主键查询用户(主键值),返回的是一个用户对象
@@ -557,9 +493,120 @@ def select_route():
     模型类.query.filter()里面的是布尔的条件   模型类.query.filter(模型类.字段名=='值')
     模型类.query.filter_by()里面的是等值  模型类.query.filter_by(字段名=='值'[可以写多个])
     '''
-
-
+"""
 # 新测试路由,用于查看基础模板是否被调用
+'''
 @user_bps.route('/test2', endpoint='test2')
 def test2_route():
     return render_template('base.html')
+'''
+
+
+# tips:定义上传照片的操作,利用七牛云对象存储
+@user_bps.route('/upload_photo', endpoint='upphoto', methods=['POST', 'GET'])
+def upload_photo_route():
+    if request.method == 'GET':
+        page_num = int(request.args.get('page', 1))  # important:一定要记得转整形
+        pagination = Photo.query.filter(Photo.user_id == g.userme.id).order_by(desc(Photo.photo_datatime)).paginate(
+            page=page_num, per_page=6)
+
+        # for p in photos:
+        #     print('---------------------------图片查询', p.photo_name)
+        return render_template('user/yourphoto.html', pagination=pagination)
+
+    # username = session.get('uname')
+    photos = request.files.get('pics')  # important:这样获得的是一个filestorage对象,可以进行存储
+    # user = User.query.filter_by(username=username).first()
+    if photos:
+        photos_name = photos.filename
+        secure_name = check_img(photos_name)
+        if secure_name:
+            # file_path = os.path.join(Config.UPLOAD_PHOTO_FOLDER, secure_name)
+            # photos.save(file_path)
+            raw_pic_name = secure_name.split('.')[0]
+            pic_suffix = secure_name.split('.')[-1]
+            info, ret = upload_qiniu(photos, raw_pic_name, pic_suffix)
+            if info.status_code == 200:
+                photo = Photo()
+                photo.photo_name = ret['key']
+                photo.user_id = g.userme.id  # 拿到当前全局用户的id
+                db.session.add(photo)
+                db.session.commit()
+                return redirect('/upload_photo')
+                # user.photo = os.path.join('upload/photo', secure_name).replace('\\', '/')
+            else:
+                return render_template(
+                    'user/yourphoto.html', errorinfo="上传失败"
+                )
+    else:
+        return render_template('user/yourphoto.html', errorinfo='不支持此格式')
+
+
+# important:设置一个删除图片的路由,不但要删除数据库的,也要删除云存储的!!!
+@user_bps.route('/photo_del', endpoint='delphoto')
+def photodel_route():
+    pid = request.args.get('pid')
+    photo = Photo.query.get(pid)
+    result = del_qiniu(photo.photo_name)  # important:删除七牛云存储的照片
+    if result == 200:
+        db.session.delete(photo)  # tips:注意先后顺序,先删云存储的,再删本地的,不然本地的先删除后就没信息了，就删不了云存储的了
+        db.session.commit()
+        return redirect('/upload_photo')
+    else:
+        prev_href = request.headers.get('referer', None)  # 拿到上一页的链接
+        print(prev_href)
+        return render_template('user/error.html', err_msg="删除失败,请检查网络设置", prev_href=prev_href)
+
+
+# 定义一个路由来展示所有的图片
+@user_bps.route('/all_photo', endpoint='allphoto', methods=['POST', 'GET'])
+def upload_photo_route():
+    if request.method == 'GET':
+        page_num = int(request.args.get('page', 1))  # important:一定要记得转整形
+        pagination = Photo.query.filter().order_by(desc(Photo.photo_datatime)).paginate(
+            page=page_num, per_page=30)
+        return render_template('user/all_photo.html', pagination=pagination)
+
+
+# tips:设置一个路由用来展示自己设定的相关信息
+@user_bps.route('/aboutme', methods=['GET', 'POST'], endpoint='aboutme')
+def aboutme_route():
+    uid = g.userme.id
+    print(uid)
+    if request.method == 'GET':
+        selfintro = Aboutme.query.filter(Aboutme.user_id == uid).first()
+        # print(selfintro)
+        if selfintro != None:
+            return render_template('user/aboutme.html', selfintro=selfintro)
+        else:
+            return render_template('user/aboutme.html', selfintro=None)
+    if request.method == 'POST':
+        selfintro = request.form.get('selfintro_')
+        uid = request.form.get('uid')
+        intro = Aboutme()
+        intro.user_id = uid
+        intro.selfintro = selfintro
+        db.session.add(intro)
+        db.session.commit()
+        return redirect('/aboutme')
+
+
+# 新增一个用于处理修改简介mo(di)fyab(out)me
+#tips:这部分遇到了一些问题,是因为自己对sqlalchemy的一些类型处理的方式不够清楚
+@user_bps.route('/mofyabme', methods=['GET', 'POST'], endpoint='mofyme')
+def mofyme_route():
+    if request.method == 'POST':
+        uid = request.form.get('uid',int) #tips:还有就是这里理解不深,其实get的源码定义里有这个get(self, key, default=None, type=None),最后一个type是可以指定类型的强制转化的
+        abme = Aboutme.query.filter_by(user_id=uid).first() #important:这次主要就是卡在这里了,因为自己的查询语句写的有问题
+        new_intro = request.form.get('new_intro')
+        print('-------------------------------------------=======------', new_intro)
+        abme.selfintro = new_intro
+        db.session.commit()
+
+        return redirect('/aboutme')
+
+# #tips:新增文章管理
+# @user_bps.route('/articlemanage',methods=['GET','POST'],endpoint='artm')
+# def artm_route():
+#     if request.method == 'POST':
+#         pass

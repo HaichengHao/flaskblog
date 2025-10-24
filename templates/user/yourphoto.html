@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}
+    相册管理
+{% endblock %}
+
+{% block style %}
+    {{ super() }}
+    <style>
+        div.photogallery {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            flex-wrap: wrap;
+
+        }
+
+        div.photogallery img {
+            width: 9rem;
+            height: 9rem;
+            border-radius: 0.5rem;
+        }
+
+        div.photogallery img:hover {
+            transform: scale(1.3);
+            transition: 0.3s all linear;
+
+        }
+    </style>
+
+
+{% endblock %}
+
+{% block page_content %}
+    <div class="container" style="padding: 40px">
+        <div style="background-color: #7a8484; padding: 5px;border-radius: 3px">
+            <form action="{{ url_for('user.upphoto') }}" method="post" enctype="multipart/form-data">
+                <!-- 自定义按钮 -->
+                <button type="button" class="btn btn-primary"
+                        onclick="document.getElementById('fileInput').click();">
+                    📎 选择图片文件
+                </button>
+                <button type="button" style="display:none;" id="btn2" class="btn btn-success"
+                        onclick="document.getElementById('submit_').click()">提交图片
+                </button>
+                <p><input type="file" id="fileInput" style="color: white;display: none" name="pics"
+                          onchange="updateFileName()"></p>
+                <!--用于显示自己的文件名-->
+                <span id="fileNameDisplay" style="color: white">未选择文件</span>
+                <p><input type="submit" id="submit_" style="display: none"></p></form>
+            <p>{{ errorinfo }}</p>
+        </div>
+        <div style="padding: 5px;border-radius: 3px">
+
+        </div>
+
+        <div style="padding: 40px;margin-top: 30px;background-color: #5e6972;border-radius: 3px" class="photogallery">
+            {% for page in pagination.items %}
+                <div>
+                    <img src="http://t3n9xqedb.hb-bkt.clouddn.com/{{ page.photo_name }}" alt=""
+                         title="{{ page.photoname }}">
+                    <button class="btn btn-success photo-del" tag="{{ page.id }}"
+                            style="display:flex ;justify-content:space-around;margin:1rem auto; ">删除
+                    </button>
+                </div>
+                {#                <img src="http://t3g2hh4ca.hb-bkt.clouddn.com/{{ page.photo_name }}" alt="">#}
+
+            {% endfor %}
+        </div>
+
+        <nav aria-label="Page navigation example" style="margin-top: 1rem" class="col-md-6 offset-md-5">
+            <ul class="pagination">
+                <li class="page-item">
+                    <a class="page-link" {% if pagination.has_prev %}
+                       href="{{ url_for('user.upphoto') }}?page={{ pagination.prev_num }}"{% else %}href="{{ url_for('user.upphoto') }}?page=1{% endif %}"
+                       aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% for p in range(1,pagination.pages + 1) %}
+                    <!--important:pagination.page获取当前所在页,如果当前所在页和对应的p页码数一样，那就显示激活状态-->
+                    <li {% if pagination.page == p %} class=" page-item active"{% else %}
+                                                      class="page-item"  {% endif %}><a class="page-link"
+                                                                                        href="{{ url_for('user.upphoto') }}?page={{ p }}">{{ p }}</a>
+                    </li>
+                {% endfor %}
+
+                <a class="page-link" {% if pagination.has_next %}
+                   href="{{ url_for('user.upphoto') }}?page={{ pagination.next_num }}"
+                   {% else %}href="{{ url_for('user.upphoto') }}?page=1"{% endif %} aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+                </li>
+            </ul>
+        </nav>
+
+    </div>
+
+
+
+{% endblock %}
+
+{% block myjs %}
+    <script>
+        function updateFileName() {
+            const fileInput = document.getElementById('fileInput');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            const subbtn = document.getElementById('btn2')
+            if (fileInput.files.length > 0) {
+                subbtn.style.display = 'block';
+                subbtn.style.marginTop = '5px';
+                // 显示第一个文件的名称（如果是多选，可以遍历 files 数组）
+                fileNameDisplay.textContent = fileInput.files[0].name;
+            } else {
+                fileNameDisplay.textContent = '未选择文件';
+            }
+        }
+
+        $(function () {
+            $('.photo-del').click(function () {
+                let flag_confirm = confirm('确定删除此图片吗?')
+                if (flag_confirm) {
+                    let pid = $(this).attr('tag');
+                    location.href = '{{ url_for('user.delphoto') }}?pid=' + pid;
+                }
+
+
+            })
+        })
+    </script>
+{% endblock %}

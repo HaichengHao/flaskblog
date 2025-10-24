@@ -21,6 +21,69 @@
                 {{ article.content }}
             </div>
         </div>
+        <hr>
+    <h4>评论💬:</h4>
+    {% if g.userme %}
+        <div>
+            <form action="{{ url_for('article.addcomment') }}" method="post">
+                <input type="hidden" name="articleid" value="{{ article.id }}"> <!--做一个隐藏的表单域来传递文章id-->
+                <p>
+                    <textarea name="mycomment" id="myc" cols="40" rows="5" placeholder="留下你的精彩评论🤩"></textarea>
+                </p>
+                <button type="button" id="subbtn" class="btn btn-success"
+                        onclick="document.getElementById('submitcomm').click()">发布</button>
+                <p><input type="submit" id="submitcomm" style="display: none"></p>
+            </form>
+        </div>
+        {% else %}
+        <div style="margin-bottom: 8px">
+            <a href="{{ url_for('user.login') }}" class="btn btn-primary">点我登录后即可发表评论😉</a>
+        </div>
+    {% endif %}
+    <div style="background-color: #646f7a;padding: 20px;border-radius: 4px">
+    {% if pagination.items %}
+        {% for comm in pagination.items %}
+            <div style="background-color:#ffffff;padding: 5px;border-radius: 4px; margin-bottom:6px;">
+                <img src="{% if comm.user.icon %}{{ url_for('static',filename=comm.user.icon) }}{% else %}{{ url_for('static',filename='imgs/touxiang.png') }}{% endif %}" style="border-radius: 100%;width: 40px;height: 40px ; margin-right: 10px">
+                <p><span>用户名:{{ comm.user.username }}</span>&nbsp;&nbsp;<span>{{ comm.cdatetime }}</span></p>
+                <p>评论内容:<br>{{ comm }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div style="background-color:#ffffff;padding: 5px;border-radius: 4px; height: 60px">
+            <h4>暂无评论，快来抢沙发!!!😉</h4></div>
+        </div>
+    {% endif %}
+    </div>
+    {% if pagination.items %}
+    <nav aria-label="Page navigation example" class="col-md-6 offset-md-5">
+            <ul class="pagination">
+                <li class="page-item">
+                    <a class="page-link" {% if pagination.has_prev %}
+                       href="{{ url_for('article.detail') }}?page={{ pagination.prev_num }}&article_id={{article.id}}"{% else %}href="{{ url_for('article.detail') }}?page=1&article_id={{article.id}}{% endif %}"
+                       aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% for p in range(1,pagination.pages + 1) %}
+                    <!--important:pagination.page获取当前所在页,如果当前所在页和对应的p页码数一样，那就显示激活状态-->
+                    <li {% if pagination.page == p %} class=" page-item active"{% else %}
+                                                      class="page-item"  {% endif %}><a class="page-link"
+                                                                                        href="{{ url_for('article.detail') }}?page={{ p }}&article_id={{article.id}}">{{ p }}</a>
+                    </li>
+                {% endfor %}
+
+                <a class="page-link" {% if pagination.has_next %}
+                   href="{{ url_for('article.detail') }}?page={{ pagination.next_num }}&article_id={{article.id}}"
+                   {% else %}href="{{ url_for('article.detail') }}?page=1&article_id={{article.id}}"{% endif %} aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+                </li>
+            </ul>
+        </nav>
+        {% else %}
+        <div></div>
+    {% endif %}
     </div>
 {% endblock %}
 
@@ -66,7 +129,7 @@
                 e.preventDefault();
                 $.get('{{ url_for('article.love') }}',{artid:{{article.id}}},function (data){
                     if(data.success){
-                        $('#love-count').text(data.num)
+                        $('#love-count').text('点赞量:'+data.num)
                         $('#loveit').toggleClass('bi-hand-thumbs-up bi-hand-thumbs-up-fill text-danger')
                     }
 

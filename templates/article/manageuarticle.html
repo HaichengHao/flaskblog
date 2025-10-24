@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}
+    文章管理
+{% endblock %}
+{% block page_content %}
+    {% if articles!=None %}
+        <div class="container" style="padding: 20px;margin-bottom: 40px">
+            {% for article in articles %}
+                <div class="card w-95 mb-3" style="padding: 7px;margin-top: 15px;overflow: hidden">
+                    <h3 style="color: #30423b">
+                        {{ article.title }}
+                    </h3>
+                    <div class="article contentraw">
+                        {{ article.content }}
+                    </div>
+                    <p>发布时间:{{ article.pdatetime }} 所属类别:{{ article.article_type.typename }}</p>
+                    <button class="btn btn-primary mofya" tag="{{ article.id }}">修改</button>
+                    <button class="btn btn-warning dela" tag="{{ article.id }}">删除</button>
+                </div>
+
+            {% endfor %}</div>
+    {% else %}
+        <p>你还没有发表文章哦,先留下你的足迹!!</p>
+    {% endif %}
+{% endblock %}
+
+
+{% block myjs %}
+    {{ super() }}
+
+    <script>
+
+        $(document).ready(function () {
+
+            $('.contentraw').each(function () {
+                let $div = $(this);
+                let text = $div.text().trim(); // 获取文本内容（自动解码 HTML 实体）
+
+                // 去掉首尾的双引号或单引号
+                //important:这里用的是正则表达式来匹配开头和结尾的单引号和双引号,刚好能让被引号包含的HTML标签生效
+                let cleaned = text.replace(/^["']|["']$/g, '');
+
+                // 设置为 HTML（因为内容是 HTML 标签）
+                $div.html(cleaned);
+            });
+
+            $('.mofya').click(
+                function () {
+                    let flag_confirm = confirm('确定修改此文章吗?')
+                    if (flag_confirm) {
+                        let aid = $(this).attr('tag');
+                        location.href = '{{ url_for('article.mofya') }}?aid=' + aid;
+                    }
+                }
+            );
+            $('.dela').click(
+                function () {
+                    let flag_confirm = confirm('确定删除此文章吗?')
+                    if (flag_confirm) {
+                        let aid = $(this).attr('tag');
+                        console.log(aid)
+                        location.href = '{{ url_for('article.dela') }}?aid=' + aid;
+                    }
+                }
+            )
+        });
+
+    </script>
+{% endblock %}

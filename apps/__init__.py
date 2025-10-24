@@ -10,7 +10,7 @@ from exts.extensions import db, migrate
 from settings import configdict
 from .user.view import user_bps
 from .article.view import article_bp
-from apps.user.models import User
+from apps.user.models import User,Photo
 from apps.article.models import Article, Article_type
 from apps.goods.view import goods_bp
 from apps.goods.models import *
@@ -38,7 +38,7 @@ def create_app(configname='default'):
         if request.path.startswith('/static/') or request.path == '/favicon.ico':
             return
         # important:设置白名单,不然用户会卡循环登录最后报错,白名单里放的是无需登录就能访问的页面
-        if request.path in ["/login", '/index','/login_verifycode', '/register', '/checkphone']:
+        if request.path in ["/login", '/index','/searcharticle','/login_verifycode', '/register','/detail','/checkphone']:
             return
 
         print('请求前操作')

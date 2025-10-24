@@ -12,7 +12,7 @@
             <p><img src="{% if g.userme.icon %}{{ url_for('static',filename=g.userme.icon) }}{% else %}{{ url_for('static',filename='imgs/touxiang.png') }}{% endif %}" alt="头像"
                 style="width: 70px;height: 70px ;"><br>
             </p>
-            <p><input type="file" id="upyourtouxiang" name="icon" placeholder="选择头像"><br>头像支持'jpg', 'png', 'svg', 'gif', 'bmp'格式</p>
+            <p><input type="file" id="upyourtouxiang" name="icon" placeholder="选择头像"><br>头像支持'jpg','jpeg', 'png', 'svg', 'gif', 'bmp'格式</p>
             <p><input type="text" name="userme" value="{{ current_user() }}" contenteditable="false"
                       hidden="hidden"></p>
             <p><input type="text" name="newusername" placeholder="输入新的用户名"></p>

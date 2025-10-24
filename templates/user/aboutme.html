@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block style %}
+    {{ super() }}
+{% endblock %}
+{% block title %}
+    关于我
+{% endblock %}
+
+{% block page_content %}
+    {% if selfintro != None %}
+        <div id="selfintro" style="padding: 20px">
+            <div class="contentraw"
+                 style="padding: 30px;background-color: #6f7a7d;color: whitesmoke;border-radius: 8px">
+                {{ selfintro.selfintro }}
+
+            </div>
+            <button class="btn btn-success"  style="margin-top: 8px" id="modifyintro">修改简介</button>
+        </div>
+        <div id="newintro" style="padding: 30px;display: none" >
+            <form action="{{ url_for('user.mofyme') }}" method="post">
+                <p>
+                <textarea class="mytextarea" name="new_intro" id="content" cols="50" rows="10"
+                          placeholder="留下你的个人简介吧❤️❤️❤️" style="min-height: 70px">{{ selfintro.selfintro }}</textarea>
+                </p>
+                <p>
+                    <input type="text" name="uid" value="{{ g.userme.id }}" hidden="hidden">
+                </p>
+                <p><input type="submit" value="发布新简介" class="btn btn-primary"></p>
+            </form>
+
+        </div>
+    {% else %}
+        <div style="padding: 30px;">
+            <p>
+                还没有简介哦😉,快来留下你的足迹!!🤩
+            </p>
+        </div>
+        <div class="" style="padding: 30px">
+            <form action="{{ url_for('user.aboutme') }}" method="post">
+                <p>
+                <textarea class="mytextarea" name="selfintro_" id="content" cols="50" rows="10"
+                          placeholder="留下你的个人简介吧❤️❤️❤️" style="min-height: 70px"></textarea>
+                </p>
+                <p>
+                    <input type="text" name="uid" value="{{ g.userme.id }}" hidden="hidden">
+                </p>
+                <p><input type="submit" value="发布简介" class="btn btn-primary"></p>
+            </form>
+
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block myjs %}
+    <script src="https://cdn.tiny.cloud/1/2bn27w2aq5v8rbes6ajcwfyj2h0agqlwk3l0psl7bn428fdd/tinymce/8/tinymce.min.js"
+            referrerpolicy="origin" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='tinymce/langs/zh_CN.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/publisharticle.js') }}"></script>
+    <script>
+
+        $(document).ready(function () {
+            selfintro = document.getElementById('selfintro');
+            newintro = document.getElementById('newintro');
+            $('.contentraw').each(function () {
+                let $div = $(this);
+                let text = $div.text().trim(); // 获取文本内容（自动解码 HTML 实体）
+
+                // 去掉首尾的双引号或单引号
+                //important:这里用的是正则表达式来匹配开头和结尾的单引号和双引号,刚好能让被引号包含的HTML标签生效
+                let cleaned = text.replace(/^["']|["']$/g, '');
+
+                // 设置为 HTML（因为内容是 HTML 标签）
+                $div.html(cleaned);
+            });
+            $('#modifyintro').click(
+                function (){
+                    selfintro.style.display = "none";
+                    newintro.style.display = 'block';
+                }
+            )
+        });
+
+    </script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}
+    修改文章
+{% endblock %}
+
+{% block page_content %}
+    <div class="" style="padding: 30px">
+        <form action="{{ url_for('article.mofya') }}" method="post">
+{#            <p>当前用户{{current_user() }}</p>#}
+            <p><input type="text" name="aid" value="{{ article.id }}" hidden="hidden"></p>
+            <p>文章标题&nbsp;&nbsp;<input type="text" name="title" placeholder="{{ article.title }}"></p>
+            <p>
+                <textarea class="mytextarea" name="content" id="content" cols="50" rows="10" placeholder="编辑内容" style="min-height: 70px">
+                    {{ article.content }}
+                </textarea>
+            </p>
+            <p>
+                <select name="typeid" >
+{#                    <option>选择文章分类</option>#}
+                    {% for type in g.article_types %}
+                        <option value="{{ type.id }}">{{ type.typename }}</option>
+                    {% endfor %}
+
+                </select>
+            </p>
+            <p>
+                <input type="text" name="uid" value="{{ g.userme.id }}" hidden="hidden">
+{#                用户:#}
+{#                <select name="uid" hidden="hidden">#}
+{#                        <option value="{{ user.id }}">{{ user.username }}</option>#}
+{#                </select>#}
+            </p>
+            <p><input type="submit" value="修改文章" class="btn btn-primary"></p>
+        </form>
+
+    </div>
+
+{% endblock %}
+{% block myjs %}
+    <script src="https://cdn.tiny.cloud/1/2bn27w2aq5v8rbes6ajcwfyj2h0agqlwk3l0psl7bn428fdd/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='tinymce/langs/zh_CN.js') }}"></script>
+{#    <script src="{{ url_for('static',filename='tinymce/tinymce.min.js') }}"></script>#}
+    <script src="{{ url_for('static',filename='js/publisharticle.js') }}"></script>
+{% endblock %}

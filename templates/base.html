@@ -99,7 +99,10 @@
                             <a class="nav-link active" aria-current="page" href="/index">首页</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">关于我</a>
+                            <a class="nav-link" href="{{ url_for('user.aboutme') }}">关于我</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('user.allphoto') }}">图片大合集</a>
                         </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
@@ -108,7 +111,8 @@
                             </a>
                             <ul class="dropdown-menu">
                                 {% for type in g.article_types %}
-                                    <li><a href="{{ type.id }}" class="dropdown-item">{{ type.typename }}</a></li>
+                                    <li><a href="{{ url_for('user.index') }}?articletype={{ type.id }}"
+                                           class="dropdown-item">{{ type.typename }}</a></li>
                                 {% endfor %}
                                 {#                                <li><a class="dropdown-item" href="#">Action</a></li>#}
                                 {#                                <li><a class="dropdown-item" href="#">Another action</a></li>#}
@@ -129,8 +133,8 @@
                     </ul>
 
                     <!-- 中间搜索框 -->
-                    <form class="d-flex mx-auto" style="max-width: 300px;" role="search">
-                        <input class="form-control me-2" type="search" placeholder="搜你想搜" aria-label="Search">
+                    <form action="{{ url_for('article.searcharticle') }}" class="d-flex mx-auto" style="max-width: 300px;" role="search">
+                        <input class="form-control me-2" name="kw" type="search" placeholder="搜你想搜" aria-label="Search">
                         <button class="btn btn-outline-success" type="submit"
                                 style="white-space: nowrap; min-width: 60px;">
                             搜索
@@ -140,9 +144,12 @@
                     <!-- 右侧登录/用户信息 -->
                     <div class="ms-auto" style="margin-right: 40px">
                         <!-- 登录后用户信息部分 -->
-                        {% if username %}
+                        {#                        {% if username %}#}
+                        {% if g.userme %}
                             <ul class="navbar-nav">
                                 <img src="
+
+
 
                                         {% if g.userme.icon %}{{ url_for('static',filename=g.userme.icon) }}{% else %}{{ url_for('static',filename='imgs/touxiang.png') }}{% endif %}"
                                      alt="" style="border-radius: 100%;width: 40px;height: 40px ; margin-right: 10px">
@@ -150,13 +157,17 @@
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                                        aria-expanded="false">
-                                        您好,{{ current_user() }}
+                                        您好,{{ g.userme.username }}
                                     </a>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item"
                                                href="{{ url_for('user.usercenter') }}">用户中心</a></li>
                                         <li><a class="dropdown-item"
                                                href="{{ url_for('article.publish') }}">发表文章</a></li>
+                                        <li><a class="dropdown-item"
+                                               href="{{ url_for('user.upphoto') }}">相册管理</a></li>
+                                        <li><a class="dropdown-item"
+                                               href="{{ url_for('article.manar') }}">文章管理</a></li>
                                         <li>
                                             <hr class="dropdown-divider">
                                         </li>
@@ -190,10 +201,10 @@
     {% endblock %}
 </div>
 
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 {% block myjs %}
     <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 
 {% endblock %}
 </body>
