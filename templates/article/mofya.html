@@ -6,17 +6,18 @@
 {% block page_content %}
     <div class="" style="padding: 30px">
         <form action="{{ url_for('article.mofya') }}" method="post">
-{#            <p>当前用户{{current_user() }}</p>#}
+            {#            <p>当前用户{{current_user() }}</p>#}
             <p><input type="text" name="aid" value="{{ article.id }}" hidden="hidden"></p>
             <p>文章标题&nbsp;&nbsp;<input type="text" name="title" placeholder="{{ article.title }}"></p>
             <p>
-                <textarea class="mytextarea" name="content" id="content" cols="50" rows="10" placeholder="编辑内容" style="min-height: 70px">
+                <textarea class="mytextarea" name="content" id="content" cols="50" rows="10" placeholder="编辑内容"
+                          style="min-height: 70px">
                     {{ article.content }}
                 </textarea>
             </p>
             <p>
-                <select name="typeid" >
-{#                    <option>选择文章分类</option>#}
+                <select name="typeid">
+                    {#                    <option>选择文章分类</option>#}
                     {% for type in g.article_types %}
                         <option value="{{ type.id }}">{{ type.typename }}</option>
                     {% endfor %}
@@ -25,10 +26,10 @@
             </p>
             <p>
                 <input type="text" name="uid" value="{{ g.userme.id }}" hidden="hidden">
-{#                用户:#}
-{#                <select name="uid" hidden="hidden">#}
-{#                        <option value="{{ user.id }}">{{ user.username }}</option>#}
-{#                </select>#}
+                {#                用户:#}
+                {#                <select name="uid" hidden="hidden">#}
+                {#                        <option value="{{ user.id }}">{{ user.username }}</option>#}
+                {#                </select>#}
             </p>
             <p><input type="submit" value="修改文章" class="btn btn-primary"></p>
         </form>
@@ -37,8 +38,119 @@
 
 {% endblock %}
 {% block myjs %}
-    <script src="https://cdn.tiny.cloud/1/2bn27w2aq5v8rbes6ajcwfyj2h0agqlwk3l0psl7bn428fdd/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
-    <script src="{{ url_for('static', filename='tinymce/langs/zh_CN.js') }}"></script>
-{#    <script src="{{ url_for('static',filename='tinymce/tinymce.min.js') }}"></script>#}
+    {#    <script src="https://cdn.tiny.cloud/1/2bn27w2aq5v8rbes6ajcwfyj2h0agqlwk3l0psl7bn428fdd/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>#}
+    {#    <script src="{{ url_for('static', filename='tinymce/langs/zh_CN.js') }}"></script>#}
+    {#    <script src="{{ url_for('static', filename='tinymce/tinymce.min.js') }}"></script>#}
+    {#    <script>#}
+    {#        tinymce.init({#}
+    {#            selector: '#content',#}
+    {#            height: 400,#}
+    {#            menubar: true,  // 可以打开菜单栏方便测试（生产可关）#}
+    {##}
+    {#            // --- 插件列表：确保包含以下插件 ---#}
+    {#            plugins: [#}
+    {#                'advlist',          // 高级列表#}
+    {#                'autolink',         // 自动链接#}
+    {#                'lists',            // 列表#}
+    {#                'link',             // 超链接#}
+    {#'image',            // 图片 ← 关键#}
+    {#                'charmap',#}
+    {#                'print',#}
+    {#                'preview',#}
+    {#                'anchor',#}
+    {#                'searchreplace',#}
+    {#                'visualblocks',#}
+    {#                'code',             // 显示源码按钮#}
+    {#                'codesample',       // 插入代码块 ← 新增#}
+    {#                'insertdatetime',#}
+    {#'media',            // 视频嵌入（YouTube等）#}
+    {#                'table',            // 表格 ← 确保有#}
+    {#                'paste',            // 粘贴处理#}
+    {#'help',#}
+    {#                'wordcount'#}
+    {#            ],#}
+    {##}
+    {#            // --- 工具栏：加入图片、表格、代码按钮 ---#}
+    {#            toolbar: `#}
+    {#        undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify |#}
+    {#        bullist numlist outdent indent | table tabledelete | link image media codesample |#}
+    {#        code | help#}
+    {#    `,#}
+    {##}
+    {#            // --- 中文支持 ---#}
+    {#            language: 'zh_CN',#}
+    {#            language_url: '{{ url_for("static", filename="tinymce/langs/zh_CN.js") }}',#}
+    {##}
+    {#            // --- 其他优化 ---#}
+    {#            branding: false,#}
+    {#            promotion: false,#}
+    {#            license_key: 'gpl',#}
+    {##}
+    {#            // --- 图片粘贴和上传关键配置 ---#}
+    {#            paste_data_images: true,              // 允许粘贴图片（如从微信、截图软件直接 Ctrl+V）#}
+    {#            images_upload_handler: function (blobInfo, success, failure) {#}
+    {#                // 这里是上传图片的核心逻辑#}
+    {#                uploadImage(blobInfo, success, failure);#}
+    {#            },#}
+    {#            automatic_uploads: false,             // 手动控制上传#}
+    {#        });#}
+    {#    </script>#}
+    {#    <script src="{{ url_for('static',filename='tinymce/tinymce.min.js') }}"></script>#}
+    <script src="{{ url_for('static', filename='tinymce/tinymce.min.js') }}"></script>
+    <script>            tinymce.init({
+        selector: '#content',
+        height: 400,
+        menubar: true,  // 可以打开菜单栏方便测试（生产可关）
+        toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist',
+        // 注意这里的 'blocks' 按钮，它会显示一个下拉框用于选择段落、标题等
+        blocks: 'blocks', // 这个配置定义了下拉框中显示的选项
+        block_formats: '段落=p; 一级标题=h1; 二级标题=h2; 三级标题=h3; 预格式化文本=pre; 地址=address',
+        // --- 插件列表：确保包含以下插件 ---
+        plugins: [
+            'advlist',          // 高级列表
+            'autolink',         // 自动链接
+            'lists',            // 列表
+            'link',             // 超链接
+            {#'image',            // 图片 ← 关键#}
+            'charmap',
+            'print',
+            'preview',
+            'anchor',
+            'searchreplace',
+            'visualblocks',
+            'code',             // 显示源码按钮
+            'codesample',       // 插入代码块 ← 新增
+            'insertdatetime',
+            {#'media',            // 视频嵌入（YouTube等）#}
+            'table',            // 表格 ← 确保有
+            'paste',            // 粘贴处理
+            {#'help',#}
+            'wordcount'
+        ],
+
+        // --- 工具栏：加入图片、表格、代码按钮 ---
+        {#    toolbar: `#}
+        {#    undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify |#}
+        {#    bullist numlist outdent indent | table tabledelete | link image media codesample |#}
+        {#    code | help#}
+        {#`,#}
+
+        // --- 中文支持 ---
+        language: 'zh_CN',
+        language_url: '{{ url_for("static", filename="tinymce/langs/zh_CN.js") }}',
+
+        // --- 其他优化 ---
+        branding: false,
+        promotion: false,
+        license_key: 'gpl',
+
+        // --- 图片粘贴和上传关键配置 ---
+        paste_data_images: true,              // 允许粘贴图片（如从微信、截图软件直接 Ctrl+V）
+        images_upload_handler: function (blobInfo, success, failure) {
+            // 这里是上传图片的核心逻辑
+            uploadImage(blobInfo, success, failure);
+        },
+        automatic_uploads: false,             // 手动控制上传
+    });</script>
     <script src="{{ url_for('static',filename='js/publisharticle.js') }}"></script>
 {% endblock %}

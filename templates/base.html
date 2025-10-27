@@ -79,6 +79,22 @@
         </style>
     {% endblock %}
     <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='tinymce/tinymce.min.js') }}"></script>
+    <script>
+        tinymce.init({
+            selector: '#content',
+            height: 400,
+            menubar: false,
+            plugins: [
+                'advlist autolink lists link image charmap print preview anchor',
+                'searchreplace visualblocks code',
+                'insertdatetime media table paste code help wordcount'
+            ],
+            toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | code | help',
+            branding: false,  // 隐藏 "Powered by Tiny"
+            promotion: false  // 禁用推广提示（TinyMCE 6+）
+        });
+    </script>
 </head>
 <body>
 <div class="wrapper">

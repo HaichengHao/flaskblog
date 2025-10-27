@@ -14,9 +14,9 @@
                 {{ selfintro.selfintro }}
 
             </div>
-            <button class="btn btn-success"  style="margin-top: 8px" id="modifyintro">修改简介</button>
+            <button class="btn btn-success" style="margin-top: 8px" id="modifyintro">修改简介</button>
         </div>
-        <div id="newintro" style="padding: 30px;display: none" >
+        <div id="newintro" style="padding: 30px;display: none">
             <form action="{{ url_for('user.mofyme') }}" method="post">
                 <p>
                 <textarea class="mytextarea" name="new_intro" id="content" cols="50" rows="10"
@@ -52,10 +52,66 @@
 {% endblock %}
 
 {% block myjs %}
-    <script src="https://cdn.tiny.cloud/1/2bn27w2aq5v8rbes6ajcwfyj2h0agqlwk3l0psl7bn428fdd/tinymce/8/tinymce.min.js"
-            referrerpolicy="origin" crossorigin="anonymous"></script>
-    <script src="{{ url_for('static', filename='tinymce/langs/zh_CN.js') }}"></script>
+    {#    <script src="https://cdn.tiny.cloud/1/2bn27w2aq5v8rbes6ajcwfyj2h0agqlwk3l0psl7bn428fdd/tinymce/8/tinymce.min.js"#}
+    {#            referrerpolicy="origin" crossorigin="anonymous"></script>#}
+{#    <script src="{{ url_for('static', filename='tinymce/langs/zh_CN.js') }}"></script>#}
     <script src="{{ url_for('static',filename='js/publisharticle.js') }}"></script>
+    <script src="{{ url_for('static', filename='tinymce/tinymce.min.js') }}"></script>
+    <script>            tinymce.init({
+        selector: '#content',
+        height: 400,
+        menubar: true,  // 可以打开菜单栏方便测试（生产可关）
+        toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist',
+        // 注意这里的 'blocks' 按钮，它会显示一个下拉框用于选择段落、标题等
+        blocks: 'blocks', // 这个配置定义了下拉框中显示的选项
+        block_formats: '段落=p; 一级标题=h1; 二级标题=h2; 三级标题=h3; 预格式化文本=pre; 地址=address',
+        // --- 插件列表：确保包含以下插件 ---
+        plugins: [
+            'advlist',          // 高级列表
+            'autolink',         // 自动链接
+            'lists',            // 列表
+            'link',             // 超链接
+            {#'image',            // 图片 ← 关键#}
+            'charmap',
+            'print',
+            'preview',
+            'anchor',
+            'searchreplace',
+            'visualblocks',
+            'code',             // 显示源码按钮
+            'codesample',       // 插入代码块 ← 新增
+            'insertdatetime',
+            {#'media',            // 视频嵌入（YouTube等）#}
+            'table',            // 表格 ← 确保有
+            'paste',            // 粘贴处理
+            {#'help',#}
+            'wordcount'
+        ],
+
+        // --- 工具栏：加入图片、表格、代码按钮 ---
+    {#    toolbar: `#}
+    {#    undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify |#}
+    {#    bullist numlist outdent indent | table tabledelete | link image media codesample |#}
+    {#    code | help#}
+    {#`,#}
+
+        // --- 中文支持 ---
+        language: 'zh_CN',
+        language_url: '{{ url_for("static", filename="tinymce/langs/zh_CN.js") }}',
+
+        // --- 其他优化 ---
+        branding: false,
+        promotion: false,
+        license_key: 'gpl',
+
+        // --- 图片粘贴和上传关键配置 ---
+        paste_data_images: true,              // 允许粘贴图片（如从微信、截图软件直接 Ctrl+V）
+        images_upload_handler: function (blobInfo, success, failure) {
+            // 这里是上传图片的核心逻辑
+            uploadImage(blobInfo, success, failure);
+        },
+        automatic_uploads: false,             // 手动控制上传
+    });</script>
     <script>
 
         $(document).ready(function () {
@@ -73,7 +129,7 @@
                 $div.html(cleaned);
             });
             $('#modifyintro').click(
-                function (){
+                function () {
                     selfintro.style.display = "none";
                     newintro.style.display = 'block';
                 }
